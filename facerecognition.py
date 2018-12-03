@@ -162,7 +162,7 @@ def facerecognition(film=0, SaveModel=SaveModel, txt=txt):  #人臉辨識的函�
             return None, None 
     name_dict, number_of_samples = getnamedict()
     if os.path.exists('SaveModel/'+SaveModel):
-        classifier = load_model('SaveModel/'+SaveModel)
+        model = load_model('SaveModel/'+SaveModel)
         cap = cv2.VideoCapture(film)                                #開啟影片檔案
         detector = dlib.get_frontal_face_detector()              #Dlib的人臉偵測器
 
@@ -177,7 +177,7 @@ def facerecognition(film=0, SaveModel=SaveModel, txt=txt):  #人臉辨識的函�
                 cropped = frame[int(y1):int(y2),int(x1):int(x2)] #裁剪偵測到的人臉
                 image=cv2.resize(cropped,(64, 64),interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
                 image = np.expand_dims(image, axis = 0)          #增加一個維度
-                label = str(classifier.predict_classes(image)[0])#將預測類別的型態轉為字串
+                label = str(model.predict_classes(image)[0])#將預測類別的型態轉為字串
                 label = name_dict['sample'+label]                #利用字典找姓名
                 text = label
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
