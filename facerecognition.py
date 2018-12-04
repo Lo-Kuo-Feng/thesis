@@ -128,16 +128,33 @@ def show_loss_history(train_loss='loss',validation_loss='val_loss', history=hist
     except NameError:
             print("name 'history' is not defined")
                 
-def plot_images_labels_prediction(images,labels,prediction,idx,num=10):
+def plot_images_labels_prediction(images,labels,prediction,idx,num=10,txt=txt):
+    def getnamedict(txt=txt):
+        try:
+            with open(txt,'r') as f:
+                name = f.read().split("\n")
+                name_dict = {}
+                for i in name:
+                    key, value = i.split(":")
+                    name_dict[key] = value
+            return name_dict, len(name_dict)
+        except ValueError:
+            print("No sampl")
+            return name_dict, 0
+        except FileNotFoundError:
+            print("No such file or directory: "+txt)
+            return None, None 
+    name_dict, number_of_samples = getnamedict()
+    
     fig = plt.gcf()
     fig.set_size_inches(12, 14)
     if num>25: num=25 
     for i in range(0, num):
         ax=plt.subplot(5,5, 1+i)
         ax.imshow(images[idx], cmap='binary')
-        title= "label=" +str(labels[idx])
+        title= "label=" + name_dict['sample'+str(labels[idx])]
         if len(prediction)>0:
-            title+=",predict="+str(prediction[idx]) 
+            title+=",predict="+name_dict['sample'+str(prediction[idx])] 
             
         ax.set_title(title,fontsize=10) 
         ax.set_xticks([]);ax.set_yticks([])        
