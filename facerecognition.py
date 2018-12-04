@@ -189,10 +189,11 @@ def facerecognition(film=0, SaveModel='facerecognition.hd5', txt='sample_name.tx
                 y2 = d.bottom()
                 cropped = frame[int(y1):int(y2),int(x1):int(x2)] #裁剪偵測到的人臉
                 image=cv2.resize(cropped,(64, 64),interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
-                image = np.expand_dims(image, axis = 0)          #增加一個維度
-                label = str(model.predict_classes(image)[0])#將預測類別的型態轉為字串
-                label = name_dict['sample'+label]                #利用字典找姓名
-                text = label
+                image = np.expand_dims(image, axis = 0)/255          #增加一個維度
+                label = model.predict_classes(image)[0]    #預測類別
+                proba = model.predict(image)[0][label]    #預測機率
+                name = name_dict['sample'+str(label)]       #利用字典找姓名
+                text = name+'({}%)'.format(proba)
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
                 cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
             cv2.imshow("face recognition", frame)                  #顯示結果
