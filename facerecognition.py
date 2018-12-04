@@ -157,7 +157,7 @@ def plot_images_labels_prediction(images,labels,prediction,idx,num=10,txt='sampl
         idx+=1 
     plt.show()
                 
-def facerecognition(film=0, SaveModel='facerecognition.hd5', txt='sample_name.txt'):  #人臉辨識的函數，參數為(VideoCapture參數)
+def facerecognition(threshold=0.7, film=0, SaveModel='facerecognition.hd5', txt='sample_name.txt'):  
     def getnamedict(txt=txt):
         try:
             with open(txt,'r') as f:
@@ -193,9 +193,14 @@ def facerecognition(film=0, SaveModel='facerecognition.hd5', txt='sample_name.tx
                 label = model.predict_classes(image)[0]    #預測類別
                 proba = model.predict(image)[0][label]    #預測機率
                 name = name_dict['sample'+str(label)]       #利用字典找姓名
-                text = name+'({}%)'.format(proba)
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+                if proba>threshold:
+                    text = name+'({}%)'.format(proba)
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                    cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+                else:
+                    text = 'Unlabeled'
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                    cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
             cv2.imshow("face recognition", frame)                  #顯示結果
             if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
                 break
