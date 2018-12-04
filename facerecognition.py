@@ -5,22 +5,18 @@
 
 
 import os     #使用操作系統相關功能的模塊
+from shutil import copyfile
 import numpy as np          #Python進行科學計算的基礎包
 import pandas as pd
 import matplotlib.pyplot as plt
-import dlib   #dlib是一套包含了機器學習、計算機視覺、圖像處理等的函式庫
 import cv2    #OpenCV
+import dlib   #dlib是一套包含了機器學習、計算機視覺、圖像處理等的函式庫
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import load_model
-from shutil import copyfile
 
-txt = 'sample_name.txt'
-target_size = 64
-history = None
-SaveModel = 'face.hd5'
 
-def extractface(film=0, sample=42, number=-1):       #擷取人臉的函數，參數為(VideoCapture參數，樣本編號資料夾,樣本數量)
+def extractface(sample='sample_face', number=-1, film=0):       #擷取人臉的函數，參數為(VideoCapture參數，樣本編號資料夾,樣本數量)
     if not os.path.exists(sample):              #如果不存在sample的資料夾就創建它
         os.mkdir(sample)
     cap = cv2.VideoCapture(film)                #開啟影片檔案，影片路徑，筆電鏡頭打0
@@ -37,7 +33,7 @@ def extractface(film=0, sample=42, number=-1):       #擷取人臉的函數，�
             y2 = d.bottom()
             text = "%2.2f(%d)" % (scores[i], idx[i])            #標示分數，方向
             cropped = frame[int(y1):int(y2),int(x1):int(x2)]    #裁剪偵測到的人臉
-            cv2.imwrite(os.getcwd()+"\\{}\\{}_{}.png".format(sample,sample[:-4],n), cropped)#儲存裁剪到的人臉
+            cv2.imwrite(os.getcwd()+"\\{}\\{}_{}.png".format(sample,sample[:-5],n), cropped)#儲存裁剪到的人臉
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
             cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA) #標示分數
             n += 1                              #更新人臉圖片編號
@@ -45,7 +41,7 @@ def extractface(film=0, sample=42, number=-1):       #擷取人臉的函數，�
                 print('已擷取%d張人臉圖片'%n) 
             if n == number:
                 break
-        cv2.imshow("Face Detection", frame)     #顯示結果
+        cv2.imshow("extract face", frame)     #顯示結果
         if cv2.waitKey(1) & 0xFF == ord('q'):   #按Q停止
             break
         elif n == number:
@@ -54,7 +50,7 @@ def extractface(film=0, sample=42, number=-1):       #擷取人臉的函數，�
     cap.release()           #釋放資源
     cv2.destroyAllWindows() #刪除任何我們建立的窗口
     
-def getnamedict(txt=txt):
+def getnamedict(txt='sample_name.txt'):
     try:
         with open(txt,'r') as f:
             name = f.read().split("\n")
@@ -70,7 +66,7 @@ def getnamedict(txt=txt):
         print("No such file or directory: "+txt)
         return None, None 
         
-def train_validation_test_split():
+def train_validation_test_split(txt='sample_name.txt'):
     if os.path.exists(txt):
         name_dict, number_of_samples=getnamedict(txt=txt)
         datasets = ['train', 'validation', 'test']
@@ -104,7 +100,7 @@ def train_validation_test_split():
             for i in range(number_of_samples):
                 copyFileToDst(locals()['sample%s_'%i+dataset], dataset, sample_face[i])
     
-def show_acc_history(train_acc='acc',validation_acc='val_acc', history=history):
+def show_acc_history(train_acc='acc',validation_acc='val_acc', history=None):
     try:
         plt.plot(history.history[train_acc])
         plt.plot(history.history[validation_acc])
@@ -116,7 +112,7 @@ def show_acc_history(train_acc='acc',validation_acc='val_acc', history=history):
     except NameError:
         print("name 'history' is not defined")
     
-def show_loss_history(train_loss='loss',validation_loss='val_loss', history=history):
+def show_loss_history(train_loss='loss',validation_loss='val_loss', history=None):
     try:
         plt.plot(history.history[train_loss])
         plt.plot(history.history[validation_loss])
@@ -128,7 +124,7 @@ def show_loss_history(train_loss='loss',validation_loss='val_loss', history=hist
     except NameError:
             print("name 'history' is not defined")
                 
-def plot_images_labels_prediction(images,labels,prediction,idx,num=10,txt=txt):
+def plot_images_labels_prediction(images,labels,prediction,idx,num=10,txt='sample_name.txt'):
     def getnamedict(txt=txt):
         try:
             with open(txt,'r') as f:
@@ -161,7 +157,7 @@ def plot_images_labels_prediction(images,labels,prediction,idx,num=10,txt=txt):
         idx+=1 
     plt.show()
                 
-def facerecognition(film=0, SaveModel=SaveModel, txt=txt):  #人臉辨識的函數，參數為(VideoCapture參數)
+def facerecognition(film=0, SaveModel='facerecognition.hd5', txt='sample_name.txt'):  #人臉辨識的函數，參數為(VideoCapture參數)
     def getnamedict(txt=txt):
         try:
             with open(txt,'r') as f:
