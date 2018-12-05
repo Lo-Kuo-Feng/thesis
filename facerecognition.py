@@ -5,6 +5,7 @@
 
 
 import os     #使用操作系統相關功能的模塊
+import glob
 from shutil import copyfile
 import numpy as np          #Python進行科學計算的基礎包
 import pandas as pd
@@ -13,6 +14,7 @@ import cv2    #OpenCV
 import dlib   #dlib是一套包含了機器學習、計算機視覺、圖像處理等的函式庫
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import ImageDataGenerator
+from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
 
@@ -99,6 +101,53 @@ def train_validation_test_split(txt='sample_name.txt'):
         for dataset in datasets:
             for i in range(number_of_samples):
                 copyFileToDst(locals()['sample%s_'%i+dataset], dataset, sample_face[i])
+                
+def dataAugmentation(numbers=100, dataset='train', save_format='jpg'):
+    cwd = os.getcwd()
+    DIR = os.listdir(dataset)
+
+    for folder in DIR:
+        if not os.path.exists(os.path.join(dataset, folder+'+')):              
+            os.mkdir(os.path.join(dataset, folder+'+'))
+        save_dir = os.path.join(dataset, folder+'+')
+        FOLDER = os.listdir(os.path.join(dataset, folder))
+        for file in FOLDER:
+            path = os.path.join(dataset, folder, file)
+            #定义图片生成器
+            data_gen = ImageDataGenerator(rotation_range=40,
+                                          width_shift_range=0.2,
+                                          height_shift_range=0.2,
+                                          horizontal_flip=True,
+                                          vertical_flip=True,
+                                          fill_mode='nearest',
+                                          data_format='channels_last')
+            img=load_img(path)
+            x = img_to_array(img,data_format="channels_last")   #图片转化成array类型,因flow()接收numpy数组为参数
+            x=x.reshape((1,) + x.shape)     #要求为4维
+            #使用for循环迭代,生成图片
+            i = 1
+            for batch in data_gen.flow(x,batch_size=1,
+                                       save_to_dir=save_dir,
+                                       save_prefix='face',
+                                       save_format=save_format):
+                i += 1
+                if i>numbers:
+                    break
+            os.chdir(os.getcwd()+r'\{}\{}+'.format(dataset,folder))#切換資料夾
+            #自動化檔案批次重新命名
+            allfiles = glob.glob('*.'+save_format)
+            for afile in allfiles:
+                os.rename(afile, 'f_'+ afile)
+            allfiles = glob.glob('*.'+save_format)
+            count=1
+            for afile in allfiles:
+                new_filename = folder+'_'+str(count) + '.'+save_format
+                os.rename(afile, new_filename)
+                count += 1
+                
+            os.chdir(cwd)#切換資料夾
+            print('{}已增加了{}筆資料'.format(folder, count-1))
+        print('{}共增加了{}筆資料'.format(folder, count-1))
     
 def show_acc_history(train_acc='acc',validation_acc='val_acc', history=None):
     try:
