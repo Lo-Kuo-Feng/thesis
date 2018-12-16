@@ -17,6 +17,33 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
+def viewversion():
+    import sys
+    import numpy
+    import pandas
+    import matplotlib
+    import sklearn
+    import tensorflow
+    import keras
+    import cv2   
+    import dlib 
+
+    cd = get_ipython().getoutput('conda --version              # !conda -V')
+    jn = get_ipython().getoutput('jupyter notebook --version   #!jupyter notebook -V')
+    py = get_ipython().getoutput('python --version             # !python -V')
+
+    print("platform          :",sys.platform)
+    print("conda             :",cd[0][6:])
+    print("jupyter notebook  :",jn[0])
+    print("Python            :",py[0][7:13])
+    print("{:<18s}: {}" .format("numpy",numpy.__version__))
+    print("{:<18s}: {}" .format("pandas",pandas.__version__))
+    print("{:<18s}: {}" .format("matplotlib",matplotlib.__version__))
+    print("{:<18s}: {}" .format("sklearn",sklearn.__version__))
+    print("{:<18s}: {}" .format("tensorflow",tensorflow.__version__))
+    print("{:<18s}: {}" .format("keras",keras.__version__))
+    print("{:<18s}: {}" .format("cv2",cv2.__version__))
+    print("{:<18s}: {}" .format("dlib",dlib.__version__))
 
 def extractface(sample='sample_face', number=-1, film=0):       #擷取人臉的函數，參數為(VideoCapture參數，樣本編號資料夾,樣本數量)
     if not os.path.exists(sample):              #如果不存在sample的資料夾就創建它
