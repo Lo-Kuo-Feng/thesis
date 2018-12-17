@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[11]:
+# In[1]:
 
 
 import os     #使用操作系統相關功能的模塊
@@ -45,7 +45,7 @@ def viewversion():
     print("{:<18s}: {}" .format("cv2",cv2.__version__))
     print("{:<18s}: {}" .format("dlib",dlib.__version__))
 
-def extractface(sample='sample_face', number=-1, film=0):       #擷取人臉的函數，參數為(VideoCapture參數，樣本編號資料夾,樣本數量)
+def extractface(sample='sample_face', number=-1, film=0, save_format='jpg'):       #擷取人臉的函數，參數為(VideoCapture參數，樣本編號資料夾,樣本數量)
     if not os.path.exists(sample):              #如果不存在sample的資料夾就創建它
         os.mkdir(sample)
     cap = cv2.VideoCapture(film)                #開啟影片檔案，影片路徑，筆電鏡頭打0
@@ -62,7 +62,7 @@ def extractface(sample='sample_face', number=-1, film=0):       #擷取人臉的
             y2 = d.bottom()
             text = "%2.2f(%d)" % (scores[i], idx[i])            #標示分數，方向
             cropped = frame[int(y1):int(y2),int(x1):int(x2)]    #裁剪偵測到的人臉
-            cv2.imwrite(os.getcwd()+"\\{}\\{}_{}.png".format(sample,sample[:-5],n), cropped)#儲存裁剪到的人臉
+            cv2.imwrite(os.getcwd()+"\\{}\\{}_{}.{}".format(sample,sample[:-5],n,save_format), cropped)#儲存裁剪到的人臉
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
             cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA) #標示分數
             n += 1                              #更新人臉圖片編號
@@ -120,14 +120,14 @@ def train_validation_test_split(txt='sample_name.txt'):
             print('sample%s'%i+'_train:',len(locals()['sample%s'%i+'_train']),
                   '\tsample%s'%i+'_validation:',len(locals()['sample%s'%i+'_validation']))
             
-        def copyFileToDst(dataset, datafolder, srcfolder):
-            for f in dataset:
+        def copyFileToDst(datafolder, srcfolder, filename):
+            for f in filename:
                 src = os.path.join(srcfolder, f)
                 dst = os.path.join(datafolder, srcfolder, f)
                 copyfile(src, dst)
         for dataset in datasets:
             for i in range(number_of_samples):
-                copyFileToDst(locals()['sample%s_'%i+dataset], dataset, sample_face[i])
+                copyFileToDst(dataset, sample_face[i], locals()['sample%s_'%i+dataset])
                 
 def dataAugmentation(numbers=100, dataset='train', save_format='jpg'):
     cwd = os.getcwd()
