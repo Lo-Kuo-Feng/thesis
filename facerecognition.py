@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[8]:
 
 
 import os     #使用操作系統相關功能的模塊
@@ -95,7 +95,7 @@ def getnamedict(txt='sample_name.txt'):
         print("No such file or directory: "+txt)
         return None, None 
         
-def train_validation_test_split(txt='sample_name.txt'):
+def train_validation_test_split(txt='sample_name.txt', tt_split_ratio=0.2, tv_split_ratio=0.2):
     if os.path.exists(txt):
         name_dict, number_of_samples=getnamedict(txt=txt)
         datasets = ['train', 'validation', 'test']
@@ -112,11 +112,11 @@ def train_validation_test_split(txt='sample_name.txt'):
         for i in range(number_of_samples):
             locals()['sample%s'%i] = os.listdir(sample_face[i])            
         for i in range(number_of_samples):
-            locals()['sample%s'%i+'_train_validation'], locals()['sample%s'%i+'_test'] =             train_test_split(locals()['sample%s'%i], test_size = 0.2, random_state = 42)
+            locals()['sample%s'%i+'_train_validation'], locals()['sample%s'%i+'_test'] =             train_test_split(locals()['sample%s'%i], test_size = tt_split_ratio, random_state = 42)
             print('sample%s'%i+'_train_validation:',len(locals()['sample%s'%i+'_train_validation']),
                   '\tsample%s'%i+'_test:',len(locals()['sample%s'%i+'_test']))
         for i in range(number_of_samples):
-            locals()['sample%s'%i+'_train'], locals()['sample%s'%i+'_validation'] =             train_test_split(locals()['sample%s'%i+'_train_validation'], test_size = 0.2, random_state = 42)
+            locals()['sample%s'%i+'_train'], locals()['sample%s'%i+'_validation'] =             train_test_split(locals()['sample%s'%i+'_train_validation'], test_size = tv_split_ratio, random_state = 42)
             print('sample%s'%i+'_train:',len(locals()['sample%s'%i+'_train']),
                   '\tsample%s'%i+'_validation:',len(locals()['sample%s'%i+'_validation']))
             
@@ -188,7 +188,7 @@ def show_acc_history(train_acc='acc',validation_acc='val_acc', history=None):
     except NameError:
         print("name 'history' is not defined")
     
-def show_loss_history(train_loss='loss',validation_loss='val_loss', history=None):
+def show_loss_history(train_loss='loss', validation_loss='val_loss', history=None):
     try:
         plt.plot(history.history[train_loss])
         plt.plot(history.history[validation_loss])
@@ -199,8 +199,8 @@ def show_loss_history(train_loss='loss',validation_loss='val_loss', history=None
         plt.show()     
     except NameError:
             print("name 'history' is not defined")
-                
-def plot_images_labels_prediction(images,labels,prediction,idx,num=10,txt='sample_name.txt'):
+
+def predict(model=None, img=r'sample0_face\sample0_0.jpg', txt='sample_name.txt'):  
     def getnamedict(txt=txt):
         try:
             with open(txt,'r') as f:
@@ -218,20 +218,126 @@ def plot_images_labels_prediction(images,labels,prediction,idx,num=10,txt='sampl
             return None, None 
     name_dict, number_of_samples = getnamedict()
     
-    fig = plt.gcf()
-    fig.set_size_inches(12, 14)
-    if num>25: num=25 
-    for i in range(0, num):
-        ax=plt.subplot(5,5, 1+i)
-        ax.imshow(images[idx], cmap='binary')
-        title= "label=" + name_dict['sample'+str(labels[idx])]
-        if len(prediction)>0:
-            title+=",predict="+name_dict['sample'+str(prediction[idx])] 
-            
-        ax.set_title(title,fontsize=10) 
-        ax.set_xticks([]);ax.set_yticks([])        
-        idx+=1 
+    from keras.preprocessing import image
+    test_image = np.expand_dims(image.img_to_array(image.load_img(img, target_size= (64,64))), 0)/255
+    predict = model.predict(test_image)[0]
+    predict_proba = model.predict_proba(test_image)[0]
+    predict_classes = model.predict_classes(test_image)[0]
+    predict_name_proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
+    predict_name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
+    
+    import matplotlib.pyplot as plt # plt 用于显示图片
+    import matplotlib.image as mpimg # mpimg 用于读取图片
+    img_2 = mpimg.imread(img) # 读取和代码处于同一目录下的 lena.png
+    # 此时 lena 就已经是一个 np.array 了，可以对它进行任意处理
+#     img_2.shape #(512, 512, 3)
+    plt.imshow(img_2) # 显示图片
+    plt.axis('off') # 不显示坐标轴
     plt.show()
+
+    for name, proba in zip(name_dict.values(),predict_proba):
+        print("{:<12s}的機率為: {}".format(name, proba))
+    print("=========================================")
+    print()
+    print("預測結果為: {}({}%)".format(predict_name,predict_name_proba))
+        
+def evaluation_model(model=None):
+ 
+    from keras.preprocessing import image
+    from keras.preprocessing.image import ImageDataGenerator
+    from keras.utils import np_utils
+    test_datagen = ImageDataGenerator(rescale = 1./255)
+    test_set = test_datagen.flow_from_directory('test/', class_mode = 'categorical')
+    testset_path = []   #testset_path為所有testset圖片路徑的list
+    for i in os.listdir('test'):
+        for j in os.listdir('test/'+i):
+            testset_path.append('test/'+i+'/'+j)  
+
+    x_test_image = []
+    for path in testset_path:
+        x_test_image.append(image.img_to_array(image.load_img(path, target_size= (64,64))))
+    x_test_image = np.array(x_test_image)/225
+
+    y_test_label = test_set.classes
+    y_Test_OneHot = np_utils.to_categorical(y_test_label)
+
+    test = []
+    for x, y, z in zip(x_test_image, y_test_label, y_Test_OneHot):
+        test.append([x, y, z])
+
+    x_test_image = []
+    y_test_label = []
+    y_Test_OneHot = []
+    for i in test:
+        x_test_image.append(i[0])
+        y_test_label.append(i[1])
+        y_Test_OneHot.append(i[2])
+    x_test_image = np.array(x_test_image)
+    y_test_label = np.array(y_test_label)
+    y_Test_OneHot = np.array(y_Test_OneHot)
+
+    prediction = model.predict_classes(x_test_image)               #預測
+    scores = model.evaluate(x_test_image, y_Test_OneHot, verbose=0)  #評估
+    return scores[1]
+
+def crosstab(model=None, txt='sample_name.txt'):
+    def getnamedict(txt=txt):
+        try:
+            with open(txt,'r') as f:
+                name = f.read().split("\n")
+                name_dict = {}
+                for i in name:
+                    key, value = i.split(":")
+                    name_dict[key] = value
+            return name_dict, len(name_dict)
+        except ValueError:
+            print("No sampl")
+            return name_dict, 0
+        except FileNotFoundError:
+            print("No such file or directory: "+txt)
+            return None, None 
+    name_dict, number_of_samples = getnamedict()
+
+    from keras.preprocessing import image
+    from keras.preprocessing.image import ImageDataGenerator
+    from keras.utils import np_utils
+    test_datagen = ImageDataGenerator(rescale = 1./255)
+    test_set = test_datagen.flow_from_directory('test/', class_mode = 'categorical')
+    testset_path = []   #testset_path為所有testset圖片路徑的list
+    for i in os.listdir('test'):
+        for j in os.listdir('test/'+i):
+            testset_path.append('test/'+i+'/'+j)  
+
+    x_test_image = []
+    for path in testset_path:
+        x_test_image.append(image.img_to_array(image.load_img(path, target_size= (64,64))))
+    x_test_image = np.array(x_test_image)/225
+
+    y_test_label = test_set.classes
+    y_Test_OneHot = np_utils.to_categorical(y_test_label)
+
+    test = []
+    for x, y, z in zip(x_test_image, y_test_label, y_Test_OneHot):
+        test.append([x, y, z])
+
+    x_test_image = []
+    y_test_label = []
+    y_Test_OneHot = []
+    for i in test:
+        x_test_image.append(i[0])
+        y_test_label.append(i[1])
+        y_Test_OneHot.append(i[2])
+    x_test_image = np.array(x_test_image)
+    y_test_label = np.array(y_test_label)
+    y_Test_OneHot = np.array(y_Test_OneHot)
+
+    prediction = model.predict_classes(x_test_image)               #預測
+    y_test_label_names = np.ndarray((len(y_test_label),),dtype=object)
+    prediction_names = np.ndarray((len(prediction),),dtype=object)
+    for i, j, k in zip(y_test_label, prediction, range(len(y_test_label))):
+        y_test_label_names[k] = name_dict['sample'+str(i)]
+        prediction_names[k] = name_dict['sample'+str(j)]
+    return pd.crosstab(y_test_label_names,prediction_names,rownames=['label'],colnames=['predict'])
                 
 def facerecognition(threshold=0.7, film=0, SaveModel='facerecognition.hd5', txt='sample_name.txt'):  
     def getnamedict(txt=txt):
