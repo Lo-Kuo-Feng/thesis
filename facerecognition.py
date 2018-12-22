@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[13]:
+# In[1]:
 
 
 import os     #使用操作系統相關功能的模塊
@@ -17,6 +17,8 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
+__version__ = "1.0.0"
+
 def version():
     import sys
     import numpy
@@ -27,7 +29,8 @@ def version():
     import keras
     import cv2   
     import dlib 
-
+    import facerecognition
+    
     cd = get_ipython().getoutput('conda --version              # !conda -V')
     jn = get_ipython().getoutput('jupyter notebook --version   #!jupyter notebook -V')
     py = get_ipython().getoutput('python --version             # !python -V')
@@ -44,6 +47,7 @@ def version():
     print("{:<18s}: {}" .format("keras",keras.__version__))
     print("{:<18s}: {}" .format("cv2",cv2.__version__))
     print("{:<18s}: {}" .format("dlib",dlib.__version__))
+    print("{:<18s}: {}" .format("facerecognition",facerecognition.__version__))
 
 def extract_face(sample='sample_face', number=-1, film=0, save_format='jpg', view_number=100):#擷取人臉的函數，參數為(VideoCapture參數，樣本編號資料夾,樣本數量)
     if not os.path.exists(sample):              #如果不存在sample的資料夾就創建它
@@ -214,47 +218,6 @@ def show_loss_history(history=None):
         plt.show()     
     except NameError:
             print("name 'history' is not defined")
-
-def predict(model=None, img=r'sample0_face\sample0_0.jpg', txt='sample_name.txt'):  
-    def get_name_dict(txt=txt):
-        try:
-            with open(txt,'r') as f:
-                name = f.read().split("\n")
-                name_dict = {}
-                for i in name:
-                    key, value = i.split(":")
-                    name_dict[key] = value
-            return name_dict, len(name_dict)
-        except ValueError:
-            print("No sampl")
-            return name_dict, 0
-        except FileNotFoundError:
-            print("No such file or directory: "+txt)
-            return None, None 
-    name_dict, number_of_samples = get_name_dict()
-    
-    from keras.preprocessing import image
-    test_image = np.expand_dims(image.img_to_array(image.load_img(img, target_size= (64,64))), 0)/255
-    predict = model.predict(test_image)[0]
-    predict_proba = model.predict_proba(test_image)[0]
-    predict_classes = model.predict_classes(test_image)[0]
-    predict_name_proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
-    predict_name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
-    
-    import matplotlib.pyplot as plt # plt 用于显示图片
-    import matplotlib.image as mpimg # mpimg 用于读取图片
-    img_2 = mpimg.imread(img) # 读取和代码处于同一目录下的 lena.png
-    # 此时 lena 就已经是一个 np.array 了，可以对它进行任意处理
-#     img_2.shape #(512, 512, 3)
-    plt.imshow(img_2) # 显示图片
-    plt.axis('off') # 不显示坐标轴
-    plt.show()
-
-    for name, proba in zip(name_dict.values(),predict_proba):
-        print("{:<12s}的機率為: {}".format(name, proba))
-    print("=========================================")
-    print()
-    print("預測結果為: {}({}%)".format(predict_name,predict_name_proba))
         
 def evaluation_model(model=None):
  
@@ -296,21 +259,6 @@ def evaluation_model(model=None):
     return scores[1]
 
 def crosstab(model=None, txt='sample_name.txt'):
-    def get_name_dict(txt=txt):
-        try:
-            with open(txt,'r') as f:
-                name = f.read().split("\n")
-                name_dict = {}
-                for i in name:
-                    key, value = i.split(":")
-                    name_dict[key] = value
-            return name_dict, len(name_dict)
-        except ValueError:
-            print("No sampl")
-            return name_dict, 0
-        except FileNotFoundError:
-            print("No such file or directory: "+txt)
-            return None, None 
     name_dict, number_of_samples = get_name_dict()
 
     from keras.preprocessing import image
@@ -353,23 +301,34 @@ def crosstab(model=None, txt='sample_name.txt'):
         y_test_label_names[k] = name_dict['sample'+str(i)]
         prediction_names[k] = name_dict['sample'+str(j)]
     return pd.crosstab(y_test_label_names,prediction_names,rownames=['label'],colnames=['predict'])
+
+def predict(model=None, img=r'sample0_face\sample0_0.jpg', txt='sample_name.txt'):  
+    name_dict, number_of_samples = get_name_dict()
+    
+    from keras.preprocessing import image
+    test_image = np.expand_dims(image.img_to_array(image.load_img(img, target_size= (64,64))), 0)/255
+    predict = model.predict(test_image)[0]
+    predict_proba = model.predict_proba(test_image)[0]
+    predict_classes = model.predict_classes(test_image)[0]
+    predict_name_proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
+    predict_name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
+    
+    import matplotlib.pyplot as plt # plt 用于显示图片
+    import matplotlib.image as mpimg # mpimg 用于读取图片
+    img_2 = mpimg.imread(img) # 读取和代码处于同一目录下的 lena.png
+    # 此时 lena 就已经是一个 np.array 了，可以对它进行任意处理
+#     img_2.shape #(512, 512, 3)
+    plt.imshow(img_2) # 显示图片
+    plt.axis('off') # 不显示坐标轴
+    plt.show()
+
+    for name, proba in zip(name_dict.values(),predict_proba):
+        print("{:<12s}的機率為: {}".format(name, proba))
+    print("=========================================")
+    print()
+    print("預測結果為: {}({}%)".format(predict_name,predict_name_proba))
                 
 def face_recognition(model=None, threshold=0.7, film=0, SaveModel='facerecognition.hd5', txt='sample_name.txt'):  
-    def get_name_dict(txt=txt):
-        try:
-            with open(txt,'r') as f:
-                name = f.read().split("\n")
-                name_dict = {}
-                for i in name:
-                    key, value = i.split(":")
-                    name_dict[key] = value
-            return name_dict, len(name_dict)
-        except ValueError:
-            print("No sampl")
-            return name_dict, 0
-        except FileNotFoundError:
-            print("No such file or directory: "+txt)
-            return None, None 
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                                #開啟影片檔案
     detector = dlib.get_frontal_face_detector()              #Dlib的人臉偵測器
