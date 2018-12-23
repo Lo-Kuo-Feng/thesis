@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 def version():
     import sys
@@ -328,7 +328,7 @@ def predict(model=None, img=r'sample0_face\sample0_0.jpg', txt='sample_name.txt'
     print()
     print("預測結果為: {}({}%)".format(predict_name,predict_name_proba))
                 
-def face_recognition(model=None, threshold=0.7, film=0, SaveModel='facerecognition.hd5', txt='sample_name.txt'):  
+def face_recognition_everyone(model=None, threshold=0.7, film=0, txt='sample_name.txt'):  
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                                #開啟影片檔案
     detector = dlib.get_frontal_face_detector()              #Dlib的人臉偵測器
@@ -358,6 +358,69 @@ def face_recognition(model=None, threshold=0.7, film=0, SaveModel='facerecogniti
         cv2.imshow("face recognition", frame)                  #顯示結果
         if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
             break
+    cap.release()                                            #釋放資源
+    cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
+    
+def histogram_diff(image1=None,image2=None):
+    from PIL import Image
+    import math
+    import operator
+    from functools import reduce
+    h1 = Image.open(image1).histogram()
+    h2 = Image.open(image2).histogram()
+    diff = math.sqrt(reduce(operator.add, list(map(lambda a,b: (a-b)**2, h1, h2)))/len(h1))
+    return diff
+    
+def face_recognition(model=None, threshold=0.7, film=0, txt='sample_name.txt'):  
+    name_dict, number_of_samples = get_name_dict() 
+    cap = cv2.VideoCapture(film)                                #開啟影片檔案
+    detector = dlib.get_frontal_face_detector()              #Dlib的人臉偵測器
+    count = 0
+    while(cap.isOpened()):       #使用cap.isOpened()，來檢查是否成功初始化，以迴圈從影片檔案讀取影格，並顯示出來
+#         cap.set(cv2.CAP_PROP_POS_MSEC,(count*500)) #影片速度
+        ret, frame = cap.read()  #第一個參數ret的值為True或False，代表有沒有讀到圖片;第二個參數是frame，是當前截取一幀的圖片。
+#         frame = cv2.resize(frame,(800, 400))
+        face_rects, scores, idx = detector.run(frame, 0)     #偵測人臉
+        big_size = 0
+        big_size_idex = 0
+        big_size_x1 = 0
+        big_size_y1 = 0
+        big_size_x2 = 0
+        big_size_y2 = 0
+        for i, d in enumerate(face_rects):                   #取出所有偵測的結果
+            x1 = d.left()
+            y1 = d.top()
+            x2 = d.right()
+            y2 = d.bottom()
+            height = d.bottom()-d.top()
+            width = d.right()-d.left()
+            size = height*width
+            if size > big_size:
+                big_size = size
+                big_size_idex = i
+                big_size_x1 = d.left()
+                big_size_y1 = d.top()
+                big_size_x2 = d.right()
+                big_size_y2 = d.bottom()
+        if len(face_rects) != 0:
+            cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉
+            image=cv2.resize(cropped,(64, 64),interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
+            image = np.expand_dims(image, axis = 0)/255          #增加一個維度
+            label = model.predict_classes(image)[0]    #預測類別
+            proba = model.predict(image)[0][label]    #預測機率
+            name = name_dict['sample'+str(label)]       #利用字典找姓名
+            if proba>threshold:
+                text = name+'({}%)'.format(proba)
+                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+            else:
+                text = 'Unlabeled'
+                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+        cv2.imshow("face recognition", frame)                  #顯示結果
+        if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
+            break
+        count += 1
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
 
