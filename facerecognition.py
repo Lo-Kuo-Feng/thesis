@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 def version():
     import sys
@@ -58,6 +58,7 @@ def photograph_face(sample_file='photograph_face', sample_name='sample_face', fi
     while(cap.isOpened()):       #使用cap.isOpened()，來檢查是否成功初始化，以迴圈從影片檔案讀取影格，並顯示出來
         cv2.namedWindow("photograph face", cv2.WINDOW_NORMAL)
         ret, frame = cap.read()  #第一個參數ret的值為True或False，代表有沒有讀到圖片;第二個參數是frame，是當前截取一幀的圖片。
+        frame = cv2.flip(frame,1,dst=None) #水平镜像
         face_rects, scores, idx = detector.run(frame, 0)     #偵測人臉
         big_size = 0
         big_size_idex = 0
@@ -109,6 +110,7 @@ def extract_face(sample='sample_face', number=-1, film=0, save_format='jpg', vie
     while(cap.isOpened()):                      #使用cap.isOpened()，來檢查是否成功初始化，以迴圈從影片檔案讀取影格，並顯示出來
         cv2.namedWindow("extract face", cv2.WINDOW_NORMAL)
         ret, frame = cap.read()  #第一個參數ret的值為True或False，代表有沒有讀到圖片;第二個參數是frame，是當前截取一幀的圖片。
+        frame = cv2.flip(frame,1,dst=None) #水平镜像
         face_rects, scores, idx = detector.run(frame, 0)        #偵測人臉
         for i, d in enumerate(face_rects):      #取出所有偵測的結果
             x1 = d.left()
@@ -387,6 +389,7 @@ def face_recognition_everyone(model=None, threshold=0.7, film=0, txt='sample_nam
     while(cap.isOpened()):       #使用cap.isOpened()，來檢查是否成功初始化，以迴圈從影片檔案讀取影格，並顯示出來
         cv2.namedWindow("face recognition everyone", cv2.WINDOW_NORMAL)
         ret, frame = cap.read()  #第一個參數ret的值為True或False，代表有沒有讀到圖片;第二個參數是frame，是當前截取一幀的圖片。
+        frame = cv2.flip(frame,1,dst=None) #水平镜像
         face_rects, scores, idx = detector.run(frame, 0)     #偵測人臉
         for i, d in enumerate(face_rects):                   #取出所有偵測的結果
             face = False
@@ -441,6 +444,7 @@ def face_recognition(model=None, threshold=0.7, film=0, txt='sample_name.txt'):
         cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
 #         cap.set(cv2.CAP_PROP_POS_MSEC,(count*500)) #影片速度
         ret, frame = cap.read()  #第一個參數ret的值為True或False，代表有沒有讀到圖片;第二個參數是frame，是當前截取一幀的圖片。
+        frame = cv2.flip(frame,1,dst=None) #水平镜像
 #         frame = cv2.resize(frame,(800, 400))
         face_rects, scores, idx = detector.run(frame, 0)     #偵測人臉
         big_size = 0
