@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 
 def version():
     import sys
@@ -272,7 +272,7 @@ def show_loss_history(history=None):
     except NameError:
             print("name 'history' is not defined")
         
-def evaluation_model(model=None):
+def evaluation_model(model=None, target_size=64):
  
     from keras.preprocessing import image
     from keras.preprocessing.image import ImageDataGenerator
@@ -286,7 +286,7 @@ def evaluation_model(model=None):
 
     x_test_image = []
     for path in testset_path:
-        x_test_image.append(image.img_to_array(image.load_img(path, target_size= (64,64))))
+        x_test_image.append(image.img_to_array(image.load_img(path, target_size= (target_size,target_size))))
     x_test_image = np.array(x_test_image)/225
 
     y_test_label = test_set.classes
@@ -311,7 +311,7 @@ def evaluation_model(model=None):
     scores = model.evaluate(x_test_image, y_Test_OneHot, verbose=0)  #評估
     return scores[1]
 
-def crosstab(model=None, txt='sample_name.txt'):
+def crosstab(model=None, txt='sample_name.txt', target_size=64):
     name_dict, number_of_samples = get_name_dict()
 
     from keras.preprocessing import image
@@ -326,7 +326,7 @@ def crosstab(model=None, txt='sample_name.txt'):
 
     x_test_image = []
     for path in testset_path:
-        x_test_image.append(image.img_to_array(image.load_img(path, target_size= (64,64))))
+        x_test_image.append(image.img_to_array(image.load_img(path, target_size= (target_size,target_size))))
     x_test_image = np.array(x_test_image)/225
 
     y_test_label = test_set.classes
@@ -355,11 +355,11 @@ def crosstab(model=None, txt='sample_name.txt'):
         prediction_names[k] = name_dict['sample'+str(j)]
     return pd.crosstab(y_test_label_names,prediction_names,rownames=['label'],colnames=['predict'])
 
-def predict(model=None, img=r'sample0_face\sample0_0.jpg', txt='sample_name.txt'):  
+def predict(model=None, img=r'sample0_face\sample0_0.jpg', txt='sample_name.txt', target_size=64):  
     name_dict, number_of_samples = get_name_dict()
     
     from keras.preprocessing import image
-    test_image = np.expand_dims(image.img_to_array(image.load_img(img, target_size= (64,64))), 0)/255
+    test_image = np.expand_dims(image.img_to_array(image.load_img(img, target_size= (target_size,target_size))), 0)/255
     predict = model.predict(test_image)[0]
     predict_proba = model.predict_proba(test_image)[0]
     predict_classes = model.predict_classes(test_image)[0]
@@ -376,12 +376,12 @@ def predict(model=None, img=r'sample0_face\sample0_0.jpg', txt='sample_name.txt'
     plt.show()
 
     for name, proba in zip(name_dict.values(),predict_proba):
-        print("{:<12s}的機率為: {}".format(name, proba))
+        print("{:<15s}的機率為: {}".format(name, proba))
     print("=========================================")
     print()
     print("預測結果為: {}({}%)".format(predict_name,predict_name_proba))
                 
-def face_recognition_everyone(model=None, threshold=0.7, film=0, txt='sample_name.txt'):  
+def face_recognition_everyone(model=None, threshold=0.7, film=0, txt='sample_name.txt', target_size=64):  
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                                #開啟影片檔案
     detector = dlib.get_frontal_face_detector()              #Dlib的人臉偵測器
@@ -405,7 +405,7 @@ def face_recognition_everyone(model=None, threshold=0.7, film=0, txt='sample_nam
                 face = True
             if face:
                 cropped = frame[int(y1):int(y2),int(x1):int(x2)] #裁剪偵測到的人臉
-                image=cv2.resize(cropped,(64, 64),interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
+                image=cv2.resize(cropped,(target_size, target_size),interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
                 image = np.expand_dims(image, axis = 0)/255          #增加一個維度
                 label = model.predict_classes(image)[0]    #預測類別
                 proba = model.predict(image)[0][label]    #預測機率
@@ -435,7 +435,7 @@ def histogram_diff(image1=None,image2=None):
     diff = math.sqrt(reduce(operator.add, list(map(lambda a,b: (a-b)**2, h1, h2)))/len(h1))
     return diff
 
-def face_recognition(model=None, threshold=0.7, film=0, txt='sample_name.txt'):  
+def face_recognition(model=None, threshold=0.7, film=0, txt='sample_name.txt', target_size=64):  
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                                #開啟影片檔案
     detector = dlib.get_frontal_face_detector()              #Dlib的人臉偵測器
@@ -472,7 +472,7 @@ def face_recognition(model=None, threshold=0.7, film=0, txt='sample_name.txt'):
                 face = True
         if face:
             cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉
-            image=cv2.resize(cropped,(64, 64),interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
+            image=cv2.resize(cropped,(target_size, target_size),interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
             image = np.expand_dims(image, axis = 0)/255          #增加一個維度
             label = model.predict_classes(image)[0]    #預測類別
             proba = model.predict(image)[0][label]    #預測機率
