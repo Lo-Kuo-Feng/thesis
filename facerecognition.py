@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.1.2"
+__version__ = "1.2.2"
 
 def version():
     import sys
@@ -381,7 +381,7 @@ def predict(model=None, img=r'sample0_face\sample0_0.jpg', txt='sample_name.txt'
     print()
     print("預測結果為: {}({}%)".format(predict_name,predict_name_proba))
                 
-def face_recognition_everyone(model=None, threshold=0.7, film=0, txt='sample_name.txt', target_size=64):  
+def face_recognition_everyone(model=None, threshold=0.9999999999999999, film=0, txt='sample_name.txt', target_size=64):  
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                                #開啟影片檔案
     detector = dlib.get_frontal_face_detector()              #Dlib的人臉偵測器
@@ -404,13 +404,15 @@ def face_recognition_everyone(model=None, threshold=0.7, film=0, txt='sample_nam
                 big_size_y2 = d.bottom()
                 face = True
             if face:
-                cropped = frame[int(y1):int(y2),int(x1):int(x2)] #裁剪偵測到的人臉
-                image=cv2.resize(cropped,(target_size, target_size),interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
-                image = np.expand_dims(image, axis = 0)/255          #增加一個維度
-                label = model.predict_classes(image)[0]    #預測類別
-                proba = model.predict(image)[0][label]    #預測機率
-                name = name_dict['sample'+str(label)]       #利用字典找姓名
-
+                cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
+                cv2.imwrite("temporarily.jpg", cropped)
+                from keras.preprocessing import image
+                test_image = np.expand_dims(image.img_to_array(image.load_img("temporarily.jpg", target_size= (target_size,target_size))), 0)/255
+                predict = model.predict(test_image)[0]
+                predict_proba = model.predict_proba(test_image)[0]
+                predict_classes = model.predict_classes(test_image)[0]
+                proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
+                name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
                 if proba>threshold:
                     text = name+'({}%)'.format(proba)
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
@@ -434,19 +436,17 @@ def histogram_diff(image1=None,image2=None):
     h2 = Image.open(image2).histogram()
     diff = math.sqrt(reduce(operator.add, list(map(lambda a,b: (a-b)**2, h1, h2)))/len(h1))
     return diff
-
-def face_recognition(model=None, threshold=0.7, film=0, txt='sample_name.txt', target_size=64):  
+    
+def face_recognition(model=None, threshold=0.9999999999999999, film=0, txt='sample_name.txt', target_size=64): 
     name_dict, number_of_samples = get_name_dict() 
-    cap = cv2.VideoCapture(film)                                #開啟影片檔案
-    detector = dlib.get_frontal_face_detector()              #Dlib的人臉偵測器
+    cap = cv2.VideoCapture(film)                               
+    detector = dlib.get_frontal_face_detector()              
     count = 0
-    while(cap.isOpened()):       #使用cap.isOpened()，來檢查是否成功初始化，以迴圈從影片檔案讀取影格，並顯示出來
+    while(cap.isOpened()):     
         cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
-#         cap.set(cv2.CAP_PROP_POS_MSEC,(count*500)) #影片速度
-        ret, frame = cap.read()  #第一個參數ret的值為True或False，代表有沒有讀到圖片;第二個參數是frame，是當前截取一幀的圖片。
-        frame = cv2.flip(frame,1,dst=None) #水平镜像
-#         frame = cv2.resize(frame,(800, 400))
-        face_rects, scores, idx = detector.run(frame, 0)     #偵測人臉
+        ret, frame = cap.read()  
+        frame = cv2.flip(frame,1,dst=None)
+        face_rects, scores, idx = detector.run(frame, 0)    
         big_size = 0
         big_size_idex = 0
         big_size_x1 = 0
@@ -454,7 +454,7 @@ def face_recognition(model=None, threshold=0.7, film=0, txt='sample_name.txt', t
         big_size_x2 = 0
         big_size_y2 = 0
         face = False
-        for i, d in enumerate(face_rects):                   #取出所有偵測的結果
+        for i, d in enumerate(face_rects):                  
             x1 = d.left()
             y1 = d.top()
             x2 = d.right()
@@ -471,15 +471,19 @@ def face_recognition(model=None, threshold=0.7, film=0, txt='sample_name.txt', t
                 big_size_y2 = d.bottom()
                 face = True
         if face:
-            cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉
-            image=cv2.resize(cropped,(target_size, target_size),interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
-            image = np.expand_dims(image, axis = 0)/255          #增加一個維度
-            label = model.predict_classes(image)[0]    #預測類別
-            proba = model.predict(image)[0][label]    #預測機率
-            name = name_dict['sample'+str(label)]       #利用字典找姓名
+            cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
+            cv2.imwrite("temporarily.jpg", cropped)
+            from keras.preprocessing import image
+            test_image = np.expand_dims(image.img_to_array(image.load_img("temporarily.jpg", target_size= (target_size,target_size))), 0)/255
+            predict = model.predict(test_image)[0]
+            predict_proba = model.predict_proba(test_image)[0]
+            predict_classes = model.predict_classes(test_image)[0]
+            proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
+            name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
+
             if proba>threshold:
                 text = name+'({}%)'.format(proba)
-                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) 
                 cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
             else:
                 text = 'Unlabeled'
