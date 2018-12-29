@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 
 def version():
     import sys
@@ -495,6 +495,84 @@ def face_recognition(model=None, threshold=0.9999999999999999, film=0, txt='samp
         count += 1
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
+
+def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, txt='sample_name.txt', target_size=64): 
+    name_dict, number_of_samples = get_name_dict() 
+    cap = cv2.VideoCapture(film)                               
+    detector = dlib.get_frontal_face_detector()    
+    name = None
+    count = 0
+    while(cap.isOpened()):     
+        cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
+        ret, frame = cap.read()  
+        frame = cv2.flip(frame,1,dst=None)
+        face_rects, scores, idx = detector.run(frame, 0)    
+        big_size = 0
+        big_size_idex = 0
+        big_size_x1 = 0
+        big_size_y1 = 0
+        big_size_x2 = 0
+        big_size_y2 = 0
+        face = False
+        for i, d in enumerate(face_rects):                  
+            x1 = d.left()
+            y1 = d.top()
+            x2 = d.right()
+            y2 = d.bottom()
+            height = d.bottom()-d.top()
+            width = d.right()-d.left()
+            size = height*width
+            if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
+                big_size = size
+                big_size_idex = i
+                big_size_x1 = d.left()
+                big_size_y1 = d.top()
+                big_size_x2 = d.right()
+                big_size_y2 = d.bottom()
+                face = True
+        if face:
+            cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
+            cv2.imwrite("temporarily.jpg", cropped)
+            from keras.preprocessing import image
+            test_image = np.expand_dims(image.img_to_array(image.load_img("temporarily.jpg", target_size= (target_size,target_size))), 0)/255
+            predict = model.predict(test_image)[0]
+            predict_proba = model.predict_proba(test_image)[0]
+            predict_classes = model.predict_classes(test_image)[0]
+            proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
+            
+            Previous_name = name
+            name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
+            if Previous_name == name:
+                times += 1
+            else:
+                times = 0
+                        
+            if proba>threshold:
+                text = name+'({}%)'.format(proba)
+                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) 
+                cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+            else:
+                text = 'Unlabeled'
+                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+        
+        
+        if times == 100:
+            #紀錄時間
+            
+            #
+            img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(predict_classes)+'_face.jpg'))
+            img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
+            cv2.imshow("face recognition", img)     #顯示結果
+            if cv2.waitKey(3000) & 0xFF == ord('q'):   #按Q停止
+                break 
+        
+        cv2.imshow("face recognition", frame)                  #顯示結果
+        if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
+            break
+        count += 1
+    cap.release()                                            #釋放資源
+    cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
     
 def histogram_face_recognition(threshold=100, film=0, txt='sample_name.txt'): 
     name_dict, number_of_samples = get_name_dict()
@@ -564,6 +642,100 @@ def histogram_face_recognition(threshold=100, film=0, txt='sample_name.txt'):
                 text = 'Unlabeled'
                 cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
                 cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+        cv2.imshow("face recognition", frame)                  #顯示結果
+        if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
+            break
+        count += 1
+    cap.release()                                            #釋放資源
+    cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
+    
+def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.txt'): 
+    name_dict, number_of_samples = get_name_dict()
+    
+    import os
+    from PIL import Image
+    import math
+    import operator
+    from functools import reduce
+    
+    sample_face = os.listdir("photograph_face")
+    for i in range(len(sample_face)):
+        locals()['sample%s'%i] = Image.open(os.path.join(os.getcwd(),"photograph_face",sample_face[i])).histogram()
+    
+    cap = cv2.VideoCapture(film)                               
+    detector = dlib.get_frontal_face_detector()              
+    count = 0
+    times = 0
+    name = None
+    while(cap.isOpened()):     
+        cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
+        ret, frame = cap.read()  
+        frame = cv2.flip(frame,1,dst=None)
+        face_rects, scores, idx = detector.run(frame, 0) 
+        big_size = 0
+        big_size_idex = 0
+        big_size_x1 = 0
+        big_size_y1 = 0
+        big_size_x2 = 0
+        big_size_y2 = 0
+        face = False
+        for i, d in enumerate(face_rects):                  
+            x1 = d.left()
+            y1 = d.top()
+            x2 = d.right()
+            y2 = d.bottom()
+            height = d.bottom()-d.top()
+            width = d.right()-d.left()
+            size = height*width
+            if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
+                big_size = size
+                big_size_idex = i
+                big_size_x1 = d.left()
+                big_size_y1 = d.top()
+                big_size_x2 = d.right()
+                big_size_y2 = d.bottom()
+                face = True
+        if face:
+            cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
+            cv2.imwrite("temporarily.jpg", cropped)
+
+            tem = Image.open("temporarily.jpg").histogram()
+            mim_diff = 99999
+            for i in range(len(sample_face)):
+                diff = math.sqrt(reduce(operator.add, list(map(lambda a,b: (a-b)**2, tem, locals()['sample%s'%i])))/len(tem))
+                if diff < mim_diff:
+                    mim_diff = diff 
+                    mim_id = i
+                    Previous_name = name
+                    name = name_dict['sample'+str(i)]
+                    if Previous_name == name:
+                        times += 1
+                    else:
+                        times = 0
+#                 print(i)
+#                 print(name_dict['sample'+str(i)])
+#                 print(diff) 
+#                 print()
+#             print("=================")
+            if mim_diff<threshold:
+                text = name+'(RMS:{})'.format(mim_diff)
+                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) 
+                cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+            else:
+                text = 'Unlabeled'
+                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+        
+        if times == 100:
+            #紀錄時間
+            
+            #
+            img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(mim_id)+'_face.jpg'))
+            img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
+            cv2.imshow("face recognition", img)     #顯示結果
+            if cv2.waitKey(3000) & 0xFF == ord('q'):   #按Q停止
+                break
+                
         cv2.imshow("face recognition", frame)                  #顯示結果
         if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
             break
