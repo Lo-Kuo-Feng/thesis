@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.3.1"
+__version__ = "1.3.2"
 
 def version():
     import sys
@@ -497,6 +497,7 @@ def face_recognition(model=None, threshold=0.9999999999999999, film=0, txt='samp
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
 
 def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, txt='sample_name.txt', target_size=64): 
+    from datetime import datetime
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                               
     detector = dlib.get_frontal_face_detector()    
@@ -559,7 +560,8 @@ def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, tx
         
         if times == 100:
             #紀錄時間
-            
+            with open("attendance_sheet.txt", 'a') as at:
+                at.write(datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}'.format(name)+'\n')
             #
             img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(predict_classes)+'_face.jpg'))
             img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
@@ -653,6 +655,7 @@ def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.tx
     name_dict, number_of_samples = get_name_dict()
     
     import os
+    from datetime import datetime
     from PIL import Image
     import math
     import operator
@@ -728,7 +731,8 @@ def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.tx
         
         if times == 100:
             #紀錄時間
-            
+            with open("attendance_sheet.txt", 'a') as at:
+                at.write(datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}'.format(name)+'\n')
             #
             img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(mim_id)+'_face.jpg'))
             img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
