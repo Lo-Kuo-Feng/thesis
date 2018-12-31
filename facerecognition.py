@@ -496,7 +496,7 @@ def face_recognition(model=None, threshold=0.9999999999999999, film=0, txt='samp
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
 
-def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, txt='sample_name.txt', target_size=64): 
+def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, txt='sample_name.txt', target_size=64, catch_times=10): 
     from datetime import datetime
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                               
@@ -558,7 +558,7 @@ def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, tx
                 cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
         
         
-        if times == 100:
+        if times == catch_times:
             #紀錄時間
             with open("attendance_sheet.txt", 'a') as at:
                 at.write(datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}'.format(name)+'\n')
@@ -566,6 +566,7 @@ def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, tx
             img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(predict_classes)+'_face.jpg'))
             img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
             cv2.imshow("face recognition", img)     #顯示結果
+            times = 0
             if cv2.waitKey(3000) & 0xFF == ord('q'):   #按Q停止
                 break 
         
@@ -651,7 +652,7 @@ def histogram_face_recognition(threshold=100, film=0, txt='sample_name.txt'):
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
     
-def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.txt'): 
+def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.txt', catch_times=10): 
     name_dict, number_of_samples = get_name_dict()
     
     import os
@@ -729,7 +730,7 @@ def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.tx
                 cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
                 cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
         
-        if times == 100:
+        if times == catch_times:
             #紀錄時間
             with open("attendance_sheet.txt", 'a') as at:
                 at.write(datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}'.format(name)+'\n')
@@ -737,6 +738,7 @@ def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.tx
             img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(mim_id)+'_face.jpg'))
             img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
             cv2.imshow("face recognition", img)     #顯示結果
+            times = 0
             if cv2.waitKey(3000) & 0xFF == ord('q'):   #按Q停止
                 break
                 
