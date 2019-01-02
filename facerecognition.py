@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.3.3"
+__version__ = "1.3.4"
 
 def version():
     import sys
@@ -503,6 +503,9 @@ def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, tx
     cap = cv2.VideoCapture(film)                               
     detector = dlib.get_frontal_face_detector()    
     name = None
+    Previous_name = None
+    proba = None
+    times = None
     count = 0
     while(cap.isOpened()):     
         cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
@@ -541,15 +544,14 @@ def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, tx
             predict_proba = model.predict_proba(test_image)[0]
             predict_classes = model.predict_classes(test_image)[0]
             proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
-            
-            Previous_name = name
             name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
-            if Previous_name == name:
-                times += 1
-            else:
-                times = 0
-                        
+                
             if proba>threshold:
+                if Previous_name == name:
+                    times += 1
+                else:
+                    times = 0
+                Previous_name = name 
                 text = name+'({}%)'.format(proba)
                 cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) 
                 cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
@@ -672,6 +674,7 @@ def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.tx
     count = 0
     times = 0
     name = None
+    Previous_name = None
     while(cap.isOpened()):     
         cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
         ret, frame = cap.read()  
@@ -711,12 +714,13 @@ def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.tx
                 if diff < mim_diff:
                     mim_diff = diff 
                     mim_id = i
-                    Previous_name = name
                     name = name_dict['sample'+str(i)]
-                    if Previous_name == name:
-                        times += 1
-                    else:
-                        times = 0
+            if Previous_name == name:
+                times += 1
+                
+            else:
+                times = 0
+            Previous_name = name
 #                 print(i)
 #                 print(name_dict['sample'+str(i)])
 #                 print(diff) 
@@ -731,7 +735,7 @@ def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.tx
                 cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
                 cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
         
-        if times == catch_times:
+        if times > catch_times:
             #紀錄時間
             with open("attendance_sheet.txt", 'a') as at:
                 at.write(datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}'.format(name)+'\n')
