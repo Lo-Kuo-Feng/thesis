@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.3.2"
+__version__ = "1.3.3"
 
 def version():
     import sys
@@ -49,7 +49,7 @@ def version():
     print("{:<18s}: {}" .format("dlib",dlib.__version__))
     print("{:<18s}: {}" .format("facerecognition",facerecognition.__version__))
 
-def photograph_face(sample_file='photograph_face', sample_name='sample_face', film=0, save_size=64 ,save_format='jpg', show_time=1):
+def photograph_face(sample_file='photograph_face', sample_name='sample_face', film=0, save_size=224 ,save_format='jpg', show_time=1):
     if not os.path.exists(sample_file):              #如果不存在sample的資料夾就創建它
         os.mkdir(sample_file)
     cap = cv2.VideoCapture(film)                #開啟影片檔案，影片路徑，筆電鏡頭打0
@@ -100,7 +100,7 @@ def photograph_face(sample_file='photograph_face', sample_name='sample_face', fi
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口 
     
-def extract_face(sample='sample_face', number=-1, film=0, save_format='jpg', view_number=100):#擷取人臉的函數，參數為(VideoCapture參數，樣本編號資料夾,樣本數量)
+def extract_face(sample='sample_face', number=-1, film=0, save_format='jpg', view_number=100, face_direction=0):#擷取人臉的函數，參數為(VideoCapture參數，樣本編號資料夾,樣本數量)
     if not os.path.exists(sample):              #如果不存在sample的資料夾就創建它
         os.mkdir(sample)
     cap = cv2.VideoCapture(film)                #開啟影片檔案，影片路徑，筆電鏡頭打0
@@ -117,16 +117,17 @@ def extract_face(sample='sample_face', number=-1, film=0, save_format='jpg', vie
             y1 = d.top()
             x2 = d.right()
             y2 = d.bottom()
-            text = "%2.2f(%d)" % (scores[i], idx[i])            #標示分數，方向
-            cropped = frame[int(y1):int(y2),int(x1):int(x2)]    #裁剪偵測到的人臉
-            cv2.imwrite(os.getcwd()+"\\{}\\{}_{}.{}".format(sample,sample[:-5],n,save_format), cropped)#儲存裁剪到的人臉
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-            cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA) #標示分數
-            n += 1                              #更新人臉圖片編號
-            if n%view_number == 0:                      #每擷取100張人臉圖片時顯示一次擷取數量
-                print('已擷取%d張人臉圖片'%n) 
-            if n == number:
-                break
+            if idx[i] == 0:    # 1左 0中 2右 3左歪 4又歪
+                text = "%2.2f(%d)" % (scores[i], idx[i])            #標示分數，方向
+                cropped = frame[int(y1):int(y2),int(x1):int(x2)]    #裁剪偵測到的人臉
+                cv2.imwrite(os.getcwd()+"\\{}\\{}_{}.{}".format(sample,sample[:-5],n,save_format), cropped)#儲存裁剪到的人臉
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA) #標示分數
+                n += 1                              #更新人臉圖片編號
+                if n%view_number == 0:                      #每擷取100張人臉圖片時顯示一次擷取數量
+                    print('已擷取%d張人臉圖片'%n) 
+                if n == number:
+                    break
         cv2.imshow("extract face", frame)     #顯示結果
         if cv2.waitKey(1) & 0xFF == ord('q'):   #按Q停止
             break
