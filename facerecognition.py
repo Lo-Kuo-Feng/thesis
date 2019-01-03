@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.3.4"
+__version__ = "1.3.5"
 
 def version():
     import sys
@@ -117,7 +117,7 @@ def extract_face(sample='sample_face', number=-1, film=0, save_format='jpg', vie
             y1 = d.top()
             x2 = d.right()
             y2 = d.bottom()
-            if idx[i] == 0:    # 1左 0中 2右 3左歪 4又歪
+            if idx[i] == face_direction:    # 1左 0中 2右 3左歪 4又歪
                 text = "%2.2f(%d)" % (scores[i], idx[i])            #標示分數，方向
                 cropped = frame[int(y1):int(y2),int(x1):int(x2)]    #裁剪偵測到的人臉
                 cv2.imwrite(os.getcwd()+"\\{}\\{}_{}.{}".format(sample,sample[:-5],n,save_format), cropped)#儲存裁剪到的人臉
@@ -382,7 +382,7 @@ def predict(model=None, img=r'sample0_face\sample0_0.jpg', txt='sample_name.txt'
     print()
     print("預測結果為: {}({}%)".format(predict_name,predict_name_proba))
                 
-def face_recognition_everyone(model=None, threshold=0.9999999999999999, film=0, txt='sample_name.txt', target_size=64):  
+def face_recognition_everyone(model=None, threshold=0.9, film=0, txt='sample_name.txt', target_size=224, face_direction=0):  
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                                #開啟影片檔案
     detector = dlib.get_frontal_face_detector()              #Dlib的人臉偵測器
@@ -398,47 +398,38 @@ def face_recognition_everyone(model=None, threshold=0.9999999999999999, film=0, 
             y1 = d.top()
             x2 = d.right()
             y2 = d.bottom()
-            if x1>0 and y1>0 and x2>0 and y2>0:
-                big_size_x1 = d.left()
-                big_size_y1 = d.top()
-                big_size_x2 = d.right()
-                big_size_y2 = d.bottom()
-                face = True
-            if face:
-                cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
-                cv2.imwrite("temporarily.jpg", cropped)
-                from keras.preprocessing import image
-                test_image = np.expand_dims(image.img_to_array(image.load_img("temporarily.jpg", target_size= (target_size,target_size))), 0)/255
-                predict = model.predict(test_image)[0]
-                predict_proba = model.predict_proba(test_image)[0]
-                predict_classes = model.predict_classes(test_image)[0]
-                proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
-                name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
-                if proba>threshold:
-                    text = name+'({}%)'.format(proba)
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                    cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
-                else:
-                    text = 'Unlabeled'
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                    cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+            if idx[i] == face_direction:    # 1左 0中 2右 3左歪 4又歪
+                if x1>0 and y1>0 and x2>0 and y2>0:
+                    big_size_x1 = d.left()
+                    big_size_y1 = d.top()
+                    big_size_x2 = d.right()
+                    big_size_y2 = d.bottom()
+                    face = True
+                if face:
+                    cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
+                    cv2.imwrite("temporarily.jpg", cropped)
+                    from keras.preprocessing import image
+                    test_image = np.expand_dims(image.img_to_array(image.load_img("temporarily.jpg", target_size= (target_size,target_size))), 0)/255
+                    predict = model.predict(test_image)[0]
+                    predict_proba = model.predict_proba(test_image)[0]
+                    predict_classes = model.predict_classes(test_image)[0]
+                    proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
+                    name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
+                    if proba>threshold:
+                        text = name+'({}%)'.format(proba)
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                        cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+                    else:
+                        text = 'Unlabeled'
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                        cv2.putText(frame, text, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
         cv2.imshow("face recognition everyone", frame)                  #顯示結果
         if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
             break
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
     
-def histogram_diff(image1=None,image2=None):
-    from PIL import Image
-    import math
-    import operator
-    from functools import reduce
-    h1 = Image.open(image1).histogram()
-    h2 = Image.open(image2).histogram()
-    diff = math.sqrt(reduce(operator.add, list(map(lambda a,b: (a-b)**2, h1, h2)))/len(h1))
-    return diff
-    
-def face_recognition(model=None, threshold=0.9999999999999999, film=0, txt='sample_name.txt', target_size=64): 
+def face_recognition(model=None, threshold=0.9, film=0, txt='sample_name.txt', target_size=224, face_direction=0): 
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                               
     detector = dlib.get_frontal_face_detector()              
@@ -463,14 +454,15 @@ def face_recognition(model=None, threshold=0.9999999999999999, film=0, txt='samp
             height = d.bottom()-d.top()
             width = d.right()-d.left()
             size = height*width
-            if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
-                big_size = size
-                big_size_idex = i
-                big_size_x1 = d.left()
-                big_size_y1 = d.top()
-                big_size_x2 = d.right()
-                big_size_y2 = d.bottom()
-                face = True
+            if idx[i] == face_direction:    # 1左 0中 2右 3左歪 4又歪
+                if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
+                    big_size = size
+                    big_size_idex = i
+                    big_size_x1 = d.left()
+                    big_size_y1 = d.top()
+                    big_size_x2 = d.right()
+                    big_size_y2 = d.bottom()
+                    face = True
         if face:
             cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
             cv2.imwrite("temporarily.jpg", cropped)
@@ -497,7 +489,7 @@ def face_recognition(model=None, threshold=0.9999999999999999, film=0, txt='samp
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
 
-def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, txt='sample_name.txt', target_size=64, catch_times=10): 
+def face_recognition_system(model=None, threshold=0.9, film=0, txt='sample_name.txt', target_size=224, catch_times=10, face_direction=0): 
     from datetime import datetime
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                               
@@ -527,14 +519,15 @@ def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, tx
             height = d.bottom()-d.top()
             width = d.right()-d.left()
             size = height*width
-            if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
-                big_size = size
-                big_size_idex = i
-                big_size_x1 = d.left()
-                big_size_y1 = d.top()
-                big_size_x2 = d.right()
-                big_size_y2 = d.bottom()
-                face = True
+            if idx[i] == face_direction:    # 1左 0中 2右 3左歪 4又歪
+                if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
+                    big_size = size
+                    big_size_idex = i
+                    big_size_x1 = d.left()
+                    big_size_y1 = d.top()
+                    big_size_x2 = d.right()
+                    big_size_y2 = d.bottom()
+                    face = True
         if face:
             cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
             cv2.imwrite("temporarily.jpg", cropped)
@@ -580,7 +573,17 @@ def face_recognition_system(model=None, threshold=0.9999999999999999, film=0, tx
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
     
-def histogram_face_recognition(threshold=100, film=0, txt='sample_name.txt'): 
+def histogram_diff(image1=None,image2=None):
+    from PIL import Image
+    import math
+    import operator
+    from functools import reduce
+    h1 = Image.open(image1).histogram()
+    h2 = Image.open(image2).histogram()
+    diff = math.sqrt(reduce(operator.add, list(map(lambda a,b: (a-b)**2, h1, h2)))/len(h1))
+    return diff
+    
+def histogram_face_recognition(threshold=100, film=0, txt='sample_name.txt', face_direction=0): 
     name_dict, number_of_samples = get_name_dict()
     
     import os
@@ -616,14 +619,15 @@ def histogram_face_recognition(threshold=100, film=0, txt='sample_name.txt'):
             height = d.bottom()-d.top()
             width = d.right()-d.left()
             size = height*width
-            if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
-                big_size = size
-                big_size_idex = i
-                big_size_x1 = d.left()
-                big_size_y1 = d.top()
-                big_size_x2 = d.right()
-                big_size_y2 = d.bottom()
-                face = True
+            if idx[i] == face_direction:    # 1左 0中 2右 3左歪 4又歪
+                if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
+                    big_size = size
+                    big_size_idex = i
+                    big_size_x1 = d.left()
+                    big_size_y1 = d.top()
+                    big_size_x2 = d.right()
+                    big_size_y2 = d.bottom()
+                    face = True
         if face:
             cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
             cv2.imwrite("temporarily.jpg", cropped)
@@ -655,7 +659,7 @@ def histogram_face_recognition(threshold=100, film=0, txt='sample_name.txt'):
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
     
-def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.txt', catch_times=10): 
+def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.txt', catch_times=10, face_direction=0): 
     name_dict, number_of_samples = get_name_dict()
     
     import os
@@ -695,14 +699,15 @@ def histogram_face_recognition_system(threshold=100, film=0, txt='sample_name.tx
             height = d.bottom()-d.top()
             width = d.right()-d.left()
             size = height*width
-            if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
-                big_size = size
-                big_size_idex = i
-                big_size_x1 = d.left()
-                big_size_y1 = d.top()
-                big_size_x2 = d.right()
-                big_size_y2 = d.bottom()
-                face = True
+            if idx[i] == face_direction:    # 1左 0中 2右 3左歪 4又歪
+                if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
+                    big_size = size
+                    big_size_idex = i
+                    big_size_x1 = d.left()
+                    big_size_y1 = d.top()
+                    big_size_x2 = d.right()
+                    big_size_y2 = d.bottom()
+                    face = True
         if face:
             cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
             cv2.imwrite("temporarily.jpg", cropped)
