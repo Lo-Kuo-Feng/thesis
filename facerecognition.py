@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 def version():
     import sys
@@ -861,4 +861,49 @@ def face_recognition_system(model=None, pro_threshold=0.9, rms_threshold = 100,
         count += 1
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
+    
+def cnn_predict(model=None, img=None, target_size=224):   
+    from keras.preprocessing import image
+    test_image = np.expand_dims(image.img_to_array(image.load_img(img, target_size= (target_size,target_size))), 0)/255
+    cnn_predict_classes = model.predict_classes(test_image)[0]
+    proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
+    return cnn_predict_classes, proba
+
+def histogram_predict(img=None):
+    import os
+    from PIL import Image
+    import math
+    import operator
+    from functools import reduce
+
+    sample_face = os.listdir("photograph_face")
+    for i in range(len(sample_face)):
+        locals()['sample%s'%i] = Image.open(os.path.join(os.getcwd(),"photograph_face",sample_face[i])).histogram()
+        
+    tem = Image.open(img).histogram()
+    mim_rms = 999999999
+    for i in range(len(sample_face)):
+        rms = math.sqrt(reduce(operator.add, list(map(lambda a,b: (a-b)**2, tem, locals()['sample%s'%i])))/len(tem))
+        if rms < mim_rms:
+            mim_rms = rms  
+            histogram_predict_classes = i
+    return histogram_predict_classes, rms
+
+def accuracy(model=None, pro_threshold=0, rms_threshold = 999999999, target_size=224, view_number=300):
+    import os
+    testset_path = []   #testset_path為所有testset圖片路徑的list
+    for i in os.listdir('test'):
+        for j in os.listdir('test/'+i):
+            testset_path.append('test/'+i+'/'+j) 
+    correct = 0
+    for index,path in enumerate(testset_path):
+        cnn_predict_classes, proba = cnn_predict(model=model, img=path, target_size=target_size)
+        histogram_predict_classes, rms = histogram_predict(img=path)
+        if proba > pro_threshold:
+            if rms < rms_threshold:
+                if eval(path[11]) == cnn_predict_classes == histogram_predict_classes:
+                    correct += 1
+        if (index+1)%view_number == 0:
+            print('已處理',((index+1)/len(testset_path))*100,'%, accuracy =',correct/(index+1))
+    return correct/len(testset_path)
 
