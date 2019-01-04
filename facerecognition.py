@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.5.0"
+__version__ = "1.6.0"
 
 def version():
     import sys
@@ -889,21 +889,30 @@ def histogram_predict(img=None):
             histogram_predict_classes = i
     return histogram_predict_classes, rms
 
-def accuracy(model=None, pro_threshold=0, rms_threshold = 999999999, target_size=224, view_number=300):
+def face_recognition_accuracy(model=None, pro_threshold=0, rms_threshold = 999999999, target_size=224, view_number=300):
     import os
     testset_path = []   #testset_path為所有testset圖片路徑的list
     for i in os.listdir('test'):
         for j in os.listdir('test/'+i):
             testset_path.append('test/'+i+'/'+j) 
     correct = 0
+    face_recognition_number = 0
     for index,path in enumerate(testset_path):
         cnn_predict_classes, proba = cnn_predict(model=model, img=path, target_size=target_size)
         histogram_predict_classes, rms = histogram_predict(img=path)
         if proba > pro_threshold:
             if rms < rms_threshold:
+                face_recognition_number += 1
                 if eval(path[11]) == cnn_predict_classes == histogram_predict_classes:
                     correct += 1
-        if (index+1)%view_number == 0:
-            print('已處理',((index+1)/len(testset_path))*100,'%, accuracy =',correct/(index+1))
-    return correct/len(testset_path)
+        if (index+1)%view_number == 0:        
+            print("{:<6s}\t:{}%".format("已處理",((index+1)/len(testset_path))*100))
+            print("{:<6s}\t:{}張人臉".format("已偵測出",face_recognition_number))
+            print("{:<6s}\t:{}張人臉".format("已正確辨識出",correct))   
+            print("{:<14s}:{}".format("達到門檻值數據所得的準確率為",correct/face_recognition_number))
+            print("{:<14s}\t:{}".format("所有數據所得的準確率為",correct/(index+1)))
+            print("=================================================")
+    print("{:<14s}:{}".format("達到門檻值數據所得的準確率為",correct/face_recognition_number))
+    print("{:<14s}:{}".format("所有數據所得的準確率為      ",correct/(index+1)))
+    return correct/face_recognition_number, correct/(index+1)
 
