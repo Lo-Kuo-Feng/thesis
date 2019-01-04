@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.6.0"
+__version__ = "1.6.1"
 
 def version():
     import sys
@@ -902,9 +902,10 @@ def face_recognition_accuracy(model=None, pro_threshold=0, rms_threshold = 99999
         histogram_predict_classes, rms = histogram_predict(img=path)
         if proba > pro_threshold:
             if rms < rms_threshold:
-                face_recognition_number += 1
-                if eval(path[11]) == cnn_predict_classes == histogram_predict_classes:
-                    correct += 1
+                if cnn_predict_classes == histogram_predict_classes:
+                    face_recognition_number += 1
+                    if eval(path[11]) == cnn_predict_classes == histogram_predict_classes:
+                        correct += 1
         if (index+1)%view_number == 0:        
             print("{:<6s}\t:{}%".format("已處理",((index+1)/len(testset_path))*100))
             print("{:<6s}\t:{}張人臉".format("已偵測出",face_recognition_number))
