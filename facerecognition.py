@@ -762,7 +762,8 @@ def histogram_face_recognition_system(rms_threshold=100, film=0, txt='sample_nam
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
 
 def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100, 
-                            film=0, txt='sample_name.txt', target_size=224, catch_times=10, face_direction=0):     
+                              film=0, txt='sample_name.txt', target_size=224, 
+                              catch_times=10, face_direction=0, box=True):     
     from PIL import Image
     import math
     import operator
@@ -826,16 +827,18 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
                 text0 = name
                 text1 = 'probability:{}%'.format(proba)
                 text2 = 'RMS:{}'.format(rms)
-                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) 
-                cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
-                cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
-                cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                if box:
+                    cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) 
+                    cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                    cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+                    cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
             else:
                 times = 0
                 Previous_name = None
                 text = 'Unlabeled'
-                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+                if box:
+                    cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                    cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
                   
             if times == catch_times:
                 #紀錄時間
@@ -857,7 +860,8 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
 
 def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100, 
-                                      film=0, txt='sample_name.txt', target_size=224, catch_times=10, face_direction=0): 
+                              film=0, txt='sample_name.txt', target_size=224, 
+                              catch_times=10, face_direction=0, box=True): 
     
     from PIL import Image
     import math
@@ -928,16 +932,18 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
                 text0 = name
                 text1 = 'probability:{}%'.format(proba)
                 text2 = 'RMS:{}'.format(diff)
-                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) 
-                cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
-                cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
-                cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                if box:
+                    cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) 
+                    cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                    cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+                    cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
             else:
                 times = 0
                 Previous_name = None
                 text = 'Unlabeled'
-                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+                if box:
+                    cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                    cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
         
         if times == catch_times:
             #紀錄時間
@@ -985,7 +991,7 @@ def histogram_predict(img=None):
             histogram_predict_classes = i
     return histogram_predict_classes, rms
 
-def face_recognition_accuracy(model=None, pro_threshold=0, rms_threshold = 999999999, target_size=224, view_number=300):
+def face_recognition_accuracy(model=None, pro_threshold=0, rms_threshold = 999999999, target_size=224):
     import os
     testset_path = []   #testset_path為所有testset圖片路徑的list
     for i in os.listdir('test'):
@@ -1037,8 +1043,8 @@ def face_recognition_accuracy(model=None, pro_threshold=0, rms_threshold = 99999
                 correct_2 += 1
             
 #顯示========================================================================================================================       
-        if (index+1)%view_number == 0:  
-            print("{:<6s}\t:{}%".format("已處理",((index+1)/len(testset_path))*100))
+        if (index+1)%(len(testset_path)//10+1) == 0:
+            print("{:<6s}\t:{}%".format("已處理",(int((index+1)/len(testset_path)*100))))
             print()
             print("<<演算法一>>")
             print("{:<6s}\t:{}張人臉".format("已偵測出",face_recognition_number_0))
@@ -1062,7 +1068,7 @@ def face_recognition_accuracy(model=None, pro_threshold=0, rms_threshold = 99999
             
     print("{:<14s}:{}".format("演算法一達到門檻值數據所得的準確率為",correct_0/face_recognition_number_0))
     print("{:<14s}:{}".format("演算法一所有數據所得的準確率為      ",correct_0/(index+1)))
-    print("{:<14s}:{}".format("演算法二演算法二達到門檻值數據所得的準確率為",correct_1/face_recognition_number_1))
+    print("{:<14s}:{}".format("演算法二達到門檻值數據所得的準確率為",correct_1/face_recognition_number_1))
     print("{:<14s}:{}".format("演算法二所有數據所得的準確率為      ",correct_1/(index+1)))
     print("{:<14s}:{}".format("演算法三達到門檻值數據所得的準確率為",correct_2/face_recognition_number_2))
     print("{:<14s}:{}".format("演算法三所有數據所得的準確率為      ",correct_2/(index+1)))
