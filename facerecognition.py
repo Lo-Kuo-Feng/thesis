@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.7.1"
+__version__ = "1.7.2"
 
 def version():
     import sys
@@ -763,7 +763,7 @@ def histogram_face_recognition_system(rms_threshold=100, film=0, txt='sample_nam
 
 def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100, 
                               film=0, txt='sample_name.txt', target_size=224, 
-                              catch_times=10, face_direction=0, box=True):     
+                              catch_times=10, face_direction=0, box=True, other_show=True):     
     from PIL import Image
     import math
     import operator
@@ -836,9 +836,18 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
                 times = 0
                 Previous_name = None
                 text = 'Unlabeled'
+                cnn_name = name_dict['sample'+str(cnn_predict_classes)]
+                histogram_name = name_dict['sample'+str(histogram_predict_classes)]
                 if box:
-                    cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                    cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+                    if other_show:
+                        cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                        cv2.putText(frame, cnn_name, (big_size_x1, big_size_y1-60), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                        cv2.putText(frame, str(proba), (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                        cv2.putText(frame, histogram_name, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+                        cv2.putText(frame, str(rms), (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                    else:
+                        cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                        cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
                   
             if times == catch_times:
                 #紀錄時間
@@ -851,7 +860,9 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
                 times = 0
                 if cv2.waitKey(3000) & 0xFF == ord('q'):   #按Q停止
                     break 
-
+        else:
+            times = 0
+            Previous_name = None
         cv2.imshow("face recognition", frame)                  #顯示結果
         if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
             break
@@ -861,7 +872,7 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
 
 def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100, 
                               film=0, txt='sample_name.txt', target_size=224, 
-                              catch_times=10, face_direction=0, box=True): 
+                              catch_times=10, face_direction=0, box=True, other_show=True): 
     
     from PIL import Image
     import math
@@ -917,7 +928,7 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
             test_image = np.expand_dims(image.img_to_array(image.load_img("temporarily.jpg", target_size= (target_size,target_size))), 0)/255
             predict = model.predict(test_image)[0]
             predict_proba = model.predict_proba(test_image)[0]
-            predict_classes = model.predict_classes(test_image)[0]
+            predict_class = model.predict_classes(test_image)[0]
             proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
             name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
                 
@@ -937,20 +948,32 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
                     cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
                     cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
                     cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+            
             else:
                 times = 0
                 Previous_name = None
                 text = 'Unlabeled'
+                text0 = name
+                text1 = 'probability:{}%'.format(proba)
+                text2 = 'RMS:{}'.format(diff)
                 if box:
-                    cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                    cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
-        
+                    if other_show:
+                        cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                        cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                        cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                        cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                    else:
+                        cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                        cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+        else:
+            times = 0
+            Previous_name = None
         if times == catch_times:
             #紀錄時間
             with open("attendance_sheet.txt", 'a') as at:
                 at.write(datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}'.format(name)+'\n')
             #
-            img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(predict_classes)+'_face.jpg'))
+            img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(predict_class)+'_face.jpg'))
             img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
             cv2.imshow("face recognition", img)     #顯示結果
             times = 0
