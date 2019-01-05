@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.7.0"
+__version__ = "1.7.1"
 
 def version():
     import sys
@@ -760,9 +760,104 @@ def histogram_face_recognition_system(rms_threshold=100, film=0, txt='sample_nam
         count += 1
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
+
+def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100, 
+                            film=0, txt='sample_name.txt', target_size=224, catch_times=10, face_direction=0):     
+    from PIL import Image
+    import math
+    import operator
+    from functools import reduce
     
-def threshold_face_recognition_system(model=None, pro_threshold=0.9, rms_threshold = 100, 
-                            film=0, txt='sample_name.txt', target_size=224, catch_times=10, face_direction=0): 
+    sample_face = os.listdir("photograph_face")
+    for i in range(len(sample_face)):
+        locals()['sample%s'%i] = Image.open(os.path.join(os.getcwd(),"photograph_face",sample_face[i])).histogram()
+     
+    from datetime import datetime
+    name_dict, number_of_samples = get_name_dict() 
+    cap = cv2.VideoCapture(film)                               
+    detector = dlib.get_frontal_face_detector()    
+    name = None
+    Previous_name = None
+    proba = None
+    times = None
+    count = 0
+    while(cap.isOpened()):     
+        cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
+        ret, frame = cap.read()  
+        frame = cv2.flip(frame,1,dst=None)
+        face_rects, scores, idx = detector.run(frame, 0)    
+        big_size = 0
+        big_size_idex = 0
+        big_size_x1 = 0
+        big_size_y1 = 0
+        big_size_x2 = 0
+        big_size_y2 = 0
+        face = False
+        for i, d in enumerate(face_rects):                  
+            x1 = d.left()
+            y1 = d.top()
+            x2 = d.right()
+            y2 = d.bottom()
+            height = d.bottom()-d.top()
+            width = d.right()-d.left()
+            size = height*width
+            if idx[i] == face_direction:    # 1左 0中 2右 3左歪 4又歪
+                if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
+                    big_size = size
+                    big_size_idex = i
+                    big_size_x1 = d.left()
+                    big_size_y1 = d.top()
+                    big_size_x2 = d.right()
+                    big_size_y2 = d.bottom()
+                    face = True
+        if face:
+            cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
+            cv2.imwrite("temporarily.jpg", cropped)
+            
+            cnn_predict_classes, proba = cnn_predict(model=model, img="temporarily.jpg", target_size=target_size)
+            histogram_predict_classes, rms = histogram_predict(img="temporarily.jpg")
+            if (proba > pro_threshold) and (rms < rms_threshold) and (cnn_predict_classes == histogram_predict_classes):
+                name = name_dict['sample'+str(cnn_predict_classes)]
+                if Previous_name == name:
+                    times += 1
+                else:
+                    times = 0
+                Previous_name = name 
+                text0 = name
+                text1 = 'probability:{}%'.format(proba)
+                text2 = 'RMS:{}'.format(rms)
+                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) 
+                cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+                cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+            else:
+                times = 0
+                Previous_name = None
+                text = 'Unlabeled'
+                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
+                  
+            if times == catch_times:
+                #紀錄時間
+                with open("attendance_sheet.txt", 'a') as at:
+                    at.write(datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}'.format(name)+'\n')
+                #
+                img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(cnn_predict_classes)+'_face.jpg'))
+                img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
+                cv2.imshow("face recognition", img)     #顯示結果
+                times = 0
+                if cv2.waitKey(3000) & 0xFF == ord('q'):   #按Q停止
+                    break 
+
+        cv2.imshow("face recognition", frame)                  #顯示結果
+        if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
+            break
+        count += 1
+    cap.release()                                            #釋放資源
+    cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
+
+def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100, 
+                                      film=0, txt='sample_name.txt', target_size=224, catch_times=10, face_direction=0): 
     
     from PIL import Image
     import math
@@ -839,6 +934,7 @@ def threshold_face_recognition_system(model=None, pro_threshold=0.9, rms_thresho
                 cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
             else:
                 times = 0
+                Previous_name = None
                 text = 'Unlabeled'
                 cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
                 cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
@@ -861,103 +957,7 @@ def threshold_face_recognition_system(model=None, pro_threshold=0.9, rms_thresho
         count += 1
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
-    
-def intersection_face_recognition_system(model=None, pro_threshold=0.9, rms_threshold = 100, 
-                            film=0, txt='sample_name.txt', target_size=224, catch_times=10, face_direction=0):     
-    from PIL import Image
-    import math
-    import operator
-    from functools import reduce
-    
-    sample_face = os.listdir("photograph_face")
-    for i in range(len(sample_face)):
-        locals()['sample%s'%i] = Image.open(os.path.join(os.getcwd(),"photograph_face",sample_face[i])).histogram()
-     
-    from datetime import datetime
-    name_dict, number_of_samples = get_name_dict() 
-    cap = cv2.VideoCapture(film)                               
-    detector = dlib.get_frontal_face_detector()    
-    name = None
-    Previous_name = None
-    proba = None
-    times = None
-    count = 0
-    while(cap.isOpened()):     
-        cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
-        ret, frame = cap.read()  
-        frame = cv2.flip(frame,1,dst=None)
-        face_rects, scores, idx = detector.run(frame, 0)    
-        big_size = 0
-        big_size_idex = 0
-        big_size_x1 = 0
-        big_size_y1 = 0
-        big_size_x2 = 0
-        big_size_y2 = 0
-        face = False
-        for i, d in enumerate(face_rects):                  
-            x1 = d.left()
-            y1 = d.top()
-            x2 = d.right()
-            y2 = d.bottom()
-            height = d.bottom()-d.top()
-            width = d.right()-d.left()
-            size = height*width
-            if idx[i] == face_direction:    # 1左 0中 2右 3左歪 4又歪
-                if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
-                    big_size = size
-                    big_size_idex = i
-                    big_size_x1 = d.left()
-                    big_size_y1 = d.top()
-                    big_size_x2 = d.right()
-                    big_size_y2 = d.bottom()
-                    face = True
-        if face:
-            cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
-            cv2.imwrite("temporarily.jpg", cropped)
-            
-            cnn_predict_classes, proba = cnn_predict(model=model, img="temporarily.jpg", target_size=target_size)
-            histogram_predict_classes, rms = histogram_predict(img="temporarily.jpg")
-            if proba > pro_threshold:
-                if rms < rms_threshold:
-                    if cnn_predict_classes == histogram_predict_classes:
-                        name = name_dict['sample'+str(cnn_predict_classes)]
-                        if Previous_name == name:
-                            times += 1
-                        else:
-                            times = 0
-                        Previous_name = name 
-                        text0 = name
-                        text1 = 'probability:{}%'.format(proba)
-                        text2 = 'RMS:{}'.format(rms)
-                        cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 255, 0), 4, cv2.LINE_AA) 
-                        cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
-                        cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
-                        cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
-                    else:
-                        times = 0
-                        text = 'Unlabeled'
-                        cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), (0, 0, 255), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                        cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
-                  
-            if times == catch_times:
-                #紀錄時間
-                with open("attendance_sheet.txt", 'a') as at:
-                    at.write(datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}'.format(name)+'\n')
-                #
-                img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(cnn_predict_classes)+'_face.jpg'))
-                img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
-                cv2.imshow("face recognition", img)     #顯示結果
-                times = 0
-                if cv2.waitKey(3000) & 0xFF == ord('q'):   #按Q停止
-                    break 
-
-        cv2.imshow("face recognition", frame)                  #顯示結果
-        if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
-            break
-        count += 1
-    cap.release()                                            #釋放資源
-    cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
-    
+        
 def cnn_predict(model=None, img=None, target_size=224):   
     from keras.preprocessing import image
     test_image = np.expand_dims(image.img_to_array(image.load_img(img, target_size= (target_size,target_size))), 0)/255
@@ -991,25 +991,81 @@ def face_recognition_accuracy(model=None, pro_threshold=0, rms_threshold = 99999
     for i in os.listdir('test'):
         for j in os.listdir('test/'+i):
             testset_path.append('test/'+i+'/'+j) 
-    correct = 0
-    face_recognition_number = 0
+            
+    import os
+    from PIL import Image
+    import math
+    import operator
+    from functools import reduce
+
+    sample_face = os.listdir("photograph_face")
+    for i in range(len(sample_face)):
+        locals()['sample%s'%i] = Image.open(os.path.join(os.getcwd(),"photograph_face",sample_face[i])).histogram()
+     
+    correct_0 = 0
+    correct_1 = 0
+    correct_2 = 0
+    face_recognition_number_0 = 0
+    face_recognition_number_1 = 0
+    face_recognition_number_2 = 0
+
     for index,path in enumerate(testset_path):
-        cnn_predict_classes, proba = cnn_predict(model=model, img=path, target_size=target_size)
-        histogram_predict_classes, rms = histogram_predict(img=path)
-        if proba > pro_threshold:
-            if rms < rms_threshold:
-                if cnn_predict_classes == histogram_predict_classes:
-                    face_recognition_number += 1
-                    if eval(path[11]) == cnn_predict_classes == histogram_predict_classes:
-                        correct += 1
-        if (index+1)%view_number == 0:        
+        cnn_predict_class, proba = cnn_predict(model=model, img=path, target_size=target_size)
+        histogram_predict_class, rms = histogram_predict(img=path)
+        
+#"演算法一"==================================================================================================================
+        if (proba>pro_threshold) and (rms<rms_threshold) and (cnn_predict_class == histogram_predict_class):
+            face_recognition_number_0 += 1
+            if eval(path[11]) == cnn_predict_class == histogram_predict_class:
+                correct_0 += 1
+                
+#"演算法二"==================================================================================================================                
+        tem = Image.open(path).histogram()
+        rms_1 = math.sqrt(reduce(operator.add, list(map(lambda a,b: (a-b)**2, tem, locals()['sample%s'%cnn_predict_class])))/len(tem))  
+        if (proba>pro_threshold) and (rms_1<rms_threshold):
+            face_recognition_number_1 += 1
+            if eval(path[11]) == cnn_predict_class:
+                correct_1 += 1
+                
+#"演算法三"==================================================================================================================         
+        from keras.preprocessing import image
+        test_image = np.expand_dims(image.img_to_array(image.load_img(path, target_size= (target_size,target_size))), 0)/255
+        proba_2 = model.predict(test_image)[0][histogram_predict_class]   
+        if (proba_2>pro_threshold) and (rms<rms_threshold):
+            face_recognition_number_2 += 1
+            if eval(path[11]) == histogram_predict_class:
+                correct_2 += 1
+            
+#顯示========================================================================================================================       
+        if (index+1)%view_number == 0:  
             print("{:<6s}\t:{}%".format("已處理",((index+1)/len(testset_path))*100))
-            print("{:<6s}\t:{}張人臉".format("已偵測出",face_recognition_number))
-            print("{:<6s}\t:{}張人臉".format("已正確辨識出",correct))   
-            print("{:<14s}:{}".format("達到門檻值數據所得的準確率為",correct/face_recognition_number))
-            print("{:<14s}\t:{}".format("所有數據所得的準確率為",correct/(index+1)))
-            print("=================================================")
-    print("{:<14s}:{}".format("達到門檻值數據所得的準確率為",correct/face_recognition_number))
-    print("{:<14s}:{}".format("所有數據所得的準確率為      ",correct/(index+1)))
-    return correct/face_recognition_number, correct/(index+1)
+            print()
+            print("<<演算法一>>")
+            print("{:<6s}\t:{}張人臉".format("已偵測出",face_recognition_number_0))
+            print("{:<6s}\t:{}張人臉".format("已正確辨識出",correct_0))   
+            print("{:<14s}:{}".format("達到門檻值數據所得的準確率為",correct_0/face_recognition_number_0))
+            print("{:<14s}\t:{}".format("所有數據所得的準確率為",correct_0/(index+1)))
+            print()
+            print("<<演算法二>>")
+            print("{:<6s}\t:{}張人臉".format("已偵測出",face_recognition_number_1))
+            print("{:<6s}\t:{}張人臉".format("已正確辨識出",correct_1))   
+            print("{:<14s}:{}".format("達到門檻值數據所得的準確率為",correct_1/face_recognition_number_1))
+            print("{:<14s}\t:{}".format("所有數據所得的準確率為",correct_1/(index+1)))
+            print()
+            print("<<演算法三>>")
+            print("{:<6s}\t:{}張人臉".format("已偵測出",face_recognition_number_2))
+            print("{:<6s}\t:{}張人臉".format("已正確辨識出",correct_2))   
+            print("{:<14s}:{}".format("達到門檻值數據所得的準確率為",correct_2/face_recognition_number_2))
+            print("{:<14s}\t:{}".format("所有數據所得的準確率為",correct_2/(index+1)))
+            print()
+            print("=================================================")            
+            
+    print("{:<14s}:{}".format("演算法一達到門檻值數據所得的準確率為",correct_0/face_recognition_number_0))
+    print("{:<14s}:{}".format("演算法一所有數據所得的準確率為      ",correct_0/(index+1)))
+    print("{:<14s}:{}".format("演算法二演算法二達到門檻值數據所得的準確率為",correct_1/face_recognition_number_1))
+    print("{:<14s}:{}".format("演算法二所有數據所得的準確率為      ",correct_1/(index+1)))
+    print("{:<14s}:{}".format("演算法三達到門檻值數據所得的準確率為",correct_2/face_recognition_number_2))
+    print("{:<14s}:{}".format("演算法三所有數據所得的準確率為      ",correct_2/(index+1)))
+    
+    return correct_0/face_recognition_number_0, correct_0/(index+1),           correct_1/face_recognition_number_1, correct_1/(index+1),           correct_2/face_recognition_number_2, correct_2/(index+1)
 
