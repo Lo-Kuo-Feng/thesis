@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.7.2"
+__version__ = "1.7.3"
 
 def version():
     import sys
@@ -782,8 +782,13 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
     proba = None
     times = None
     count = 0
+    ret, frame = cap.read()
+    cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
+    img = cv2.imread("open_screen.png")
+    img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
+    cv2.imshow("face recognition", img)     
+    cv2.waitKey(3000)
     while(cap.isOpened()):     
-        cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
         ret, frame = cap.read()  
         frame = cv2.flip(frame,1,dst=None)
         face_rects, scores, idx = detector.run(frame, 0)    
@@ -892,9 +897,15 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
     proba = None
     times = None
     count = 0
+    ret, frame = cap.read()
+    cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
+    img = cv2.imread("open_screen.png")
+    img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
+    cv2.imshow("face recognition", img)     
+    cv2.waitKey(3000) 
+     
     while(cap.isOpened()):     
-        cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
-        ret, frame = cap.read()  
+        ret, frame = cap.read()
         frame = cv2.flip(frame,1,dst=None)
         face_rects, scores, idx = detector.run(frame, 0)    
         big_size = 0
