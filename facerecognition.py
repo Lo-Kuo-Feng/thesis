@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.7.3"
+__version__ = "1.7.4"
 
 def version():
     import sys
@@ -772,7 +772,10 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
     sample_face = os.listdir("photograph_face")
     for i in range(len(sample_face)):
         locals()['sample%s'%i] = Image.open(os.path.join(os.getcwd(),"photograph_face",sample_face[i])).histogram()
-     
+    
+    attendance_sheet = "attendance_sheet"
+    if not os.path.exists(attendance_sheet):
+        os.mkdir(attendance_sheet)
     from datetime import datetime
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                               
@@ -855,9 +858,11 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
                         cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1, cv2.LINE_AA)  #標示姓名
                   
             if times == catch_times:
-                #紀錄時間
+                #紀錄時間人臉
                 with open("attendance_sheet.txt", 'a') as at:
                     at.write(datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}'.format(name)+'\n')
+                    
+                cv2.imwrite(os.path.join(os.getcwd(),attendance_sheet,datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}.jpg'.format(name)), cropped)
                 #
                 img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(cnn_predict_classes)+'_face.jpg'))
                 img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
@@ -887,7 +892,11 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
     sample_face = os.listdir("photograph_face")
     for i in range(len(sample_face)):
         locals()['sample%s'%i] = Image.open(os.path.join(os.getcwd(),"photograph_face",sample_face[i])).histogram()
-     
+    
+    attendance_sheet = "attendance_sheet"
+    if not os.path.exists(attendance_sheet):
+        os.mkdir(attendance_sheet)
+        
     from datetime import datetime
     name_dict, number_of_samples = get_name_dict() 
     cap = cv2.VideoCapture(film)                               
@@ -980,9 +989,11 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
             times = 0
             Previous_name = None
         if times == catch_times:
-            #紀錄時間
+            #紀錄時間人臉
             with open("attendance_sheet.txt", 'a') as at:
                 at.write(datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}'.format(name)+'\n')
+            
+            cv2.imwrite(os.path.join(os.getcwd(),attendance_sheet,datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}.jpg'.format(name)), cropped)
             #
             img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(predict_class)+'_face.jpg'))
             img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
