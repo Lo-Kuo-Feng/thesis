@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.7.4"
+__version__ = "1.7.5"
 
 def version():
     import sys
@@ -249,7 +249,7 @@ def data_augmentation(numbers=100, dataset='train', save_format='jpg', verbose=0
                 print('{}已增加了{}筆資料'.format(folder, count-1))
         print('{}共增加了{}筆資料'.format(folder, count-1))
     
-def show_acc_history(history=None):
+def show_acc_history(history=None, save_name="acc"):
     try:
         plt.plot(history.history['acc'])
         plt.plot(history.history['val_acc'])
@@ -257,11 +257,12 @@ def show_acc_history(history=None):
         plt.ylabel('Accuracy')
         plt.xlabel('Epoch')
         plt.legend(['train', 'validation'], loc='upper left')
+        plt.savefig(save_name)
         plt.show()
     except NameError:
         print("name 'history' is not defined")
     
-def show_loss_history(history=None):
+def show_loss_history(history=None, save_name="loss"):
     try:
         plt.plot(history.history['loss'])
         plt.plot(history.history['val_loss'])
@@ -269,6 +270,7 @@ def show_loss_history(history=None):
         plt.ylabel('Accuracy')
         plt.xlabel('Epoch')
         plt.legend(['train', 'validation'], loc='upper left')
+        plt.savefig(save_name)
         plt.show()     
     except NameError:
             print("name 'history' is not defined")
