@@ -17,7 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
 
-__version__ = "1.7.6"
+__version__ = "1.8.0"
 
 def version():
     import sys
@@ -1127,4 +1127,83 @@ def face_recognition_accuracy(model=None, pro_threshold=0, rms_threshold = 99999
     print("{:<14s}:{}".format("演算法三所有數據所得的準確率為      ",correct_2/(index+1)))
     
     return correct_0/face_recognition_number_0, correct_0/(index+1),           correct_1/face_recognition_number_1, correct_1/(index+1),           correct_2/face_recognition_number_2, correct_2/(index+1)
+        
+def supplement_extract_face(model=None, supplement_sample=None, film=0, txt='sample_name.txt', 
+                            target_size=224, face_direction=0, save_format="jpg", 
+                            start_n=10000, number=1000, view_number=100,
+                            true_rectangle_BGR=(0, 255, 0) , true_putText_BGR=(255, 255, 255),
+                            false_rectangle_BGR=(0, 0, 255), false_putText_BGR=(255, 255, 255)): 
+    
+    if not os.path.exists(supplement_sample):             
+        os.mkdir(supplement_sample)   
+    name_dict, number_of_samples = get_name_dict() 
+    cap = cv2.VideoCapture(film)                               
+    detector = dlib.get_frontal_face_detector()    
+    n = start_n
+    ret, frame = cap.read()
+    cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
+    while(cap.isOpened()):     
+        ret, frame = cap.read()
+        frame = cv2.flip(frame,1,dst=None)
+        face_rects, scores, idx = detector.run(frame, 0)    
+        big_size = 0
+        big_size_idex = 0
+        big_size_x1 = 0
+        big_size_y1 = 0
+        big_size_x2 = 0
+        big_size_y2 = 0
+        face = False
+        for i, d in enumerate(face_rects):                  
+            x1 = d.left()
+            y1 = d.top()
+            x2 = d.right()
+            y2 = d.bottom()
+            height = d.bottom()-d.top()
+            width = d.right()-d.left()
+            size = height*width
+            if idx[i] == face_direction:    # 1左 0中 2右 3左歪 4又歪
+                if  (size > big_size) and x1>0 and y1>0 and x2>0 and y2>0:
+                    big_size = size
+                    big_size_idex = i
+                    big_size_x1 = d.left()
+                    big_size_y1 = d.top()
+                    big_size_x2 = d.right()
+                    big_size_y2 = d.bottom()
+                    face = True
+        if face:
+            cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)]
+            cv2.imwrite("temporarily.jpg", cropped)
+            from keras.preprocessing import image
+            test_image = np.expand_dims(image.img_to_array(image.load_img("temporarily.jpg", target_size= (target_size,target_size))), 0)/255
+            predict = model.predict(test_image)[0]
+            predict_proba = model.predict_proba(test_image)[0]
+            predict_class = model.predict_classes(test_image)[0]
+            proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
+            name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
+            
+            text0 = name
+            text1 = 'probability:{}%'.format(proba)
+            
+            if predict_class == eval(supplement_sample[-6]) :
+                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), true_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
+                cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)  
+            else:
+                cv2.imwrite(os.getcwd()+"\\{}\\{}_{}.{}".format(supplement_sample,supplement_sample[:-5],n,save_format), cropped)#儲存裁剪到的人臉
+                n += 1
+                cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), false_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+                cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+                
+                if (1+n-start_n)%view_number == 0:                    
+                    print('已擷取%d張人臉圖片'%(1+n-start_n)) 
+             
+        cv2.imshow("face recognition", frame)                  
+        if cv2.waitKey(1) & 0xFF == ord('q'):                
+            break
+        elif (1+n-start_n) == number:
+            break
+    print('已擷取{}張人臉樣本'.format(1+n-start_n))
+    cap.release()                                            
+    cv2.destroyAllWindows()                           
 
