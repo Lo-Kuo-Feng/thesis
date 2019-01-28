@@ -16,8 +16,10 @@ from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import load_img,img_to_array
 from keras.models import load_model
+from PIL import ImageFont, ImageDraw, Image
+font = ImageFont.truetype(r"C:\Windows\Fonts\kaiu.ttf", 25)  # C:\Windows\Fonts
 
-__version__ = "1.8.0"
+__version__ = "1.8.1"
 
 def version():
     import sys
@@ -841,9 +843,14 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
                 text2 = 'RMS:{}'.format(rms)
                 if box:
                     cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), true_rectangle_BGR, 4, cv2.LINE_AA) 
-                    cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
+#                     cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
                     cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)  #標示姓名
                     cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
+                    
+                    imgPil = Image.fromarray(frame)
+                    draw = ImageDraw.Draw(imgPil)
+                    draw.text((big_size_x1, big_size_y1-60),  text0, font = font, fill = true_putText_BGR)
+                    frame = np.array(imgPil)
             else:
                 times = 0
                 Previous_name = None
@@ -855,10 +862,16 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
                 if box:
                     if other_show:
                         cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), false_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                        cv2.putText(frame, cnn_name, (big_size_x1, big_size_y1-60), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+#                         cv2.putText(frame, cnn_name, (big_size_x1, big_size_y1-60), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
                         cv2.putText(frame, proba_text, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
-                        cv2.putText(frame, histogram_name, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)  #標示姓名
+#                         cv2.putText(frame, histogram_name, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)  #標示姓名
                         cv2.putText(frame, rms_text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+                        
+                        imgPil = Image.fromarray(frame)
+                        draw = ImageDraw.Draw(imgPil)
+                        draw.text((big_size_x1, big_size_y1-80),  cnn_name, font = font, fill = false_putText_BGR)
+                        draw.text((big_size_x1, big_size_y1-40),  histogram_name, font = font, fill = false_putText_BGR)
+                        frame = np.array(imgPil)
                     else:
                         cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), false_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
                         cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)  #標示姓名
@@ -973,10 +986,14 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
                 text2 = 'RMS:{}'.format(diff)
                 if box:
                     cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), true_rectangle_BGR, 4, cv2.LINE_AA) 
-                    cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
+#                     cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
                     cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)  #標示姓名
                     cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
-            
+                    
+                    imgPil = Image.fromarray(frame)
+                    draw = ImageDraw.Draw(imgPil)
+                    draw.text((big_size_x1, big_size_y1-60),  text0, font = font, fill = true_putText_BGR)
+                    frame = np.array(imgPil)
             else:
                 times = 0
                 Previous_name = None
@@ -987,9 +1004,14 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
                 if box:
                     if other_show:
                         cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), false_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                        cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+#                         cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
                         cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
                         cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+                        
+                        imgPil = Image.fromarray(frame)
+                        draw = ImageDraw.Draw(imgPil)
+                        draw.text((big_size_x1, big_size_y1-60),  text0, font = font, fill = false_putText_BGR)
+                        frame = np.array(imgPil)
                     else:
                         cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), false_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
                         cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)  #標示姓名
@@ -1186,14 +1208,24 @@ def supplement_extract_face(model=None, supplement_sample=None, film=0, txt='sam
             
             if predict_class == eval(supplement_sample[-6]) :
                 cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), true_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
-                cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)  
+#                 cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
+                cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
+                
+                imgPil = Image.fromarray(frame)
+                draw = ImageDraw.Draw(imgPil)
+                draw.text((big_size_x1, big_size_y1-60),  text0, font = font, fill = true_putText_BGR)
+                frame = np.array(imgPil)
             else:
                 cv2.imwrite(os.getcwd()+"\\{}\\{}_{}.{}".format(supplement_sample,supplement_sample[:-5],n,save_format), cropped)#儲存裁剪到的人臉
                 n += 1
                 cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), false_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-                cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+#                 cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
                 cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+                
+                imgPil = Image.fromarray(frame)
+                draw = ImageDraw.Draw(imgPil)
+                draw.text((big_size_x1, big_size_y1-60),  text0, font = font, fill = false_putText_BGR)
+                frame = np.array(imgPil)
                 
                 if (1+n-start_n)%view_number == 0:                    
                     print('已擷取%d張人臉圖片'%(1+n-start_n)) 
