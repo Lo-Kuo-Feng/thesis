@@ -19,7 +19,7 @@ from keras.models import load_model
 from PIL import ImageFont, ImageDraw, Image
 font = ImageFont.truetype(r"C:\Windows\Fonts\kaiu.ttf", 25)  # C:\Windows\Fonts
 
-__version__ = "1.8.1"
+__version__ = "1.8.2"
 
 def version():
     import sys
@@ -901,14 +901,17 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
 
 def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100, 
                               film=0, txt='sample_name.txt', target_size=224, 
-                              catch_times=10, face_direction=0, box=True, other_show=True,
+                              catch_times=10, show_message_time_ms=3000, face_direction=0, box=True, other_show=True,
+                              show_localtime=True,
                               true_rectangle_BGR=(0, 255, 0), true_putText_BGR=(255, 255, 255),
-                              false_rectangle_BGR=(0, 0, 255), false_putText_BGR=(255, 255, 255)): 
+                              false_rectangle_BGR=(0, 0, 255), false_putText_BGR=(255, 255, 255),
+                              show_localtime_BGR=(190, 139, 75)): 
     
     from PIL import Image
     import math
     import operator
     from functools import reduce
+    import time
     
     sample_face = os.listdir("photograph_face")
     for i in range(len(sample_face)):
@@ -982,35 +985,33 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
                     times = 0
                 Previous_name = name 
                 text0 = name
-                text1 = 'probability:{}%'.format(proba)
-                text2 = 'RMS:{}'.format(diff)
+                text1 = 'probability:{:.5f}%'.format(proba)
+                text2 = 'RMS:{:.5f}'.format(diff)
                 if box:
                     cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), true_rectangle_BGR, 4, cv2.LINE_AA) 
-#                     cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
-                    cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)  #標示姓名
-                    cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
+                    cv2.putText(frame, text1, (big_size_x1, big_size_y1-30), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)  #標示姓名
+                    cv2.putText(frame, text2, (big_size_x1, big_size_y1-10), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
                     
                     imgPil = Image.fromarray(frame)
                     draw = ImageDraw.Draw(imgPil)
-                    draw.text((big_size_x1, big_size_y1-60),  text0, font = font, fill = true_putText_BGR)
+                    draw.text((big_size_x1, big_size_y1-70),  text0, font = font, fill = true_putText_BGR)
                     frame = np.array(imgPil)
             else:
                 times = 0
                 Previous_name = None
                 text = 'Unlabeled'
                 text0 = name
-                text1 = 'probability:{}%'.format(proba)
-                text2 = 'RMS:{}'.format(diff)
+                text1 = 'probability:{:.5f}%'.format(proba)
+                text2 = 'RMS:{:.5f}'.format(diff)
                 if box:
                     if other_show:
                         cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), false_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
-#                         cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
-                        cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
-                        cv2.putText(frame, text2, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+                        cv2.putText(frame, text1, (big_size_x1, big_size_y1-30), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+                        cv2.putText(frame, text2, (big_size_x1, big_size_y1-10), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
                         
                         imgPil = Image.fromarray(frame)
                         draw = ImageDraw.Draw(imgPil)
-                        draw.text((big_size_x1, big_size_y1-60),  text0, font = font, fill = false_putText_BGR)
+                        draw.text((big_size_x1, big_size_y1-70),  text0, font = font, fill = false_putText_BGR)
                         frame = np.array(imgPil)
                     else:
                         cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), false_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
@@ -1029,9 +1030,11 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
             img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
             cv2.imshow("face recognition", img)     #顯示結果
             times = 0
-            if cv2.waitKey(3000) & 0xFF == ord('q'):   #按Q停止
+            if cv2.waitKey(show_message_time_ms) & 0xFF == ord('q'):   #按Q停止
                 break 
-        
+        if show_localtime:
+            text_time = time.strftime("%Y-%m-%d %H:%M:%S %A", time.localtime())
+            cv2.putText(frame, text_time, (20, 460), cv2.FONT_HERSHEY_DUPLEX, 0.5, show_localtime_BGR, 1, cv2.LINE_AA)
         cv2.imshow("face recognition", frame)                  #顯示結果
         if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
             break
