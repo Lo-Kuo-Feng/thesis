@@ -19,7 +19,7 @@ from keras.models import load_model
 from PIL import ImageFont, ImageDraw, Image
 font = ImageFont.truetype(r"C:\Windows\Fonts\kaiu.ttf", 25)  # C:\Windows\Fonts
 
-__version__ = "1.8.3"
+__version__ = "1.8.5"
 
 def version():
     import sys
@@ -278,7 +278,7 @@ def show_loss_history(history=None, save_name="loss"):
             print("name 'history' is not defined")
         
 def evaluation_model(model=None, target_size=64):
- 
+    name_dict, number_of_samples = get_name_dict()
     from keras.preprocessing import image
     from keras.preprocessing.image import ImageDataGenerator
     from keras.utils import np_utils
@@ -292,7 +292,7 @@ def evaluation_model(model=None, target_size=64):
     x_test_image = []
     for path in testset_path:
         x_test_image.append(image.img_to_array(image.load_img(path, target_size= (target_size,target_size))))
-    x_test_image = np.array(x_test_image)/225
+    x_test_image = np.array(x_test_image)/255
 
     y_test_label = test_set.classes
     y_Test_OneHot = np_utils.to_categorical(y_test_label)
@@ -314,9 +314,16 @@ def evaluation_model(model=None, target_size=64):
 
     prediction = model.predict_classes(x_test_image)               #預測
     scores = model.evaluate(x_test_image, y_Test_OneHot, verbose=0)  #評估
-    return scores[1]
+    print(scores[1])
+    
+    y_test_label_names = np.ndarray((len(y_test_label),),dtype=object)
+    prediction_names = np.ndarray((len(prediction),),dtype=object)
+    for i, j, k in zip(y_test_label, prediction, range(len(y_test_label))):
+        y_test_label_names[k] = name_dict['sample'+str(i)]
+        prediction_names[k] = name_dict['sample'+str(j)]
+    return pd.crosstab(y_test_label_names,prediction_names,rownames=['label'],colnames=['predict'])
 
-def crosstab(model=None, txt='sample_name.txt', target_size=64):
+def crosstab(model=None, target_size=64):
     name_dict, number_of_samples = get_name_dict()
 
     from keras.preprocessing import image
