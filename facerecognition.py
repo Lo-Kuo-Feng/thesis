@@ -19,7 +19,7 @@ from keras.models import load_model
 from PIL import ImageFont, ImageDraw, Image
 font = ImageFont.truetype(r"C:\Windows\Fonts\kaiu.ttf", 25)  # C:\Windows\Fonts
 
-__version__ = "1.8.2"
+__version__ = "1.8.3"
 
 def version():
     import sys
@@ -120,7 +120,7 @@ def extract_face(sample='sample_face', number=-1, film=0, save_format='jpg', vie
             x2 = d.right()
             y2 = d.bottom()
             if idx[i] == face_direction:    # 1左 0中 2右 3左歪 4又歪
-                text = "%2.2f(%d)" % (scores[i], idx[i])            #標示分數，方向
+                text = "Capture:%d" % (n)            #標示分數，方向
                 cropped = frame[int(y1):int(y2),int(x1):int(x2)]    #裁剪偵測到的人臉
                 cv2.imwrite(os.getcwd()+"\\{}\\{}_{}.{}".format(sample,sample[:-5],n,save_format), cropped)#儲存裁剪到的人臉
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
