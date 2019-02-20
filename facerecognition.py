@@ -19,7 +19,7 @@ from keras.models import load_model
 from PIL import ImageFont, ImageDraw, Image
 font = ImageFont.truetype(r"C:\Windows\Fonts\kaiu.ttf", 25)  # C:\Windows\Fonts
 
-__version__ = "1.8.5"
+__version__ = "1.8.6"
 
 def version():
     import sys
@@ -1215,37 +1215,40 @@ def supplement_extract_face(model=None, supplement_sample=None, film=0, txt='sam
             
             text0 = name
             text1 = 'probability:{}%'.format(proba)
+            text2 = "Capture:%d" % (n-start_n)
             
             if predict_class == eval(supplement_sample[-6]) :
                 cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), true_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
 #                 cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
-                cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
+                cv2.putText(frame, text1, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
+                cv2.putText(frame, text2, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
                 
                 imgPil = Image.fromarray(frame)
                 draw = ImageDraw.Draw(imgPil)
-                draw.text((big_size_x1, big_size_y1-60),  text0, font = font, fill = true_putText_BGR)
+                draw.text((big_size_x1, big_size_y1-80),  text0, font = font, fill = true_putText_BGR)
                 frame = np.array(imgPil)
             else:
                 cv2.imwrite(os.getcwd()+"\\{}\\{}_{}.{}".format(supplement_sample,supplement_sample[:-5],n,save_format), cropped)#儲存裁剪到的人臉
                 n += 1
                 cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), false_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
 #                 cv2.putText(frame, text0, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
-                cv2.putText(frame, text1, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
-                
+                cv2.putText(frame, text1, (big_size_x1, big_size_y1-40), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+                cv2.putText(frame, text2, (big_size_x1, big_size_y1-20), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+        
                 imgPil = Image.fromarray(frame)
                 draw = ImageDraw.Draw(imgPil)
-                draw.text((big_size_x1, big_size_y1-60),  text0, font = font, fill = false_putText_BGR)
+                draw.text((big_size_x1, big_size_y1-80),  text0, font = font, fill = false_putText_BGR)
                 frame = np.array(imgPil)
                 
-                if (1+n-start_n)%view_number == 0:                    
-                    print('已擷取%d張人臉圖片'%(1+n-start_n)) 
+                if not (n-start_n)%view_number :                    
+                    print('已擷取%d張人臉圖片'%(n-start_n)) 
              
         cv2.imshow("face recognition", frame)                  
         if cv2.waitKey(1) & 0xFF == ord('q'):                
             break
-        elif (1+n-start_n) == number:
+        elif (n-start_n) == number:
             break
-    print('已擷取{}張人臉樣本'.format(1+n-start_n))
+    print('已擷取{}張人臉樣本'.format(n-start_n))
     cap.release()                                            
-    cv2.destroyAllWindows()                           
+    cv2.destroyAllWindows()                          
 
