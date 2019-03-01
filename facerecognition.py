@@ -19,7 +19,7 @@ from keras.models import load_model
 from PIL import ImageFont, ImageDraw, Image
 font = ImageFont.truetype(r"C:\Windows\Fonts\kaiu.ttf", 25)  # C:\Windows\Fonts
 
-__version__ = "1.8.6"
+__version__ = "1.9.6"
 
 def version():
     import sys
@@ -1048,7 +1048,128 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
         count += 1
     cap.release()                                            #釋放資源
     cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口
+
+def face_recognition_system_1_demo(model=None, pro_threshold=0.9, rms_threshold = 100, 
+                                   film=0, txt='sample_name.txt', target_size=224,
+                                   show_message_time_ms=3000, face_direction=0, box=True, other_show=True,
+                                   show_localtime=True,
+                                   true_rectangle_BGR=(0, 255, 0), true_putText_BGR=(255, 255, 255),
+                                   false_rectangle_BGR=(0, 0, 255), false_putText_BGR=(255, 255, 255),
+                                   show_localtime_BGR=(190, 139, 75)): 
+    
+    from PIL import Image
+    import math
+    import operator
+    from functools import reduce
+    import time
+    
+    sample_face = os.listdir("photograph_face")
+    for i in range(len(sample_face)):
+        locals()['sample%s'%i] = Image.open(os.path.join(os.getcwd(),"photograph_face",sample_face[i])).histogram()
+    
+    attendance_sheet = "attendance_sheet"
+    if not os.path.exists(attendance_sheet):
+        os.mkdir(attendance_sheet)
         
+    from datetime import datetime
+    name_dict, number_of_samples = get_name_dict() 
+    cap = cv2.VideoCapture(film)                               
+    detector = dlib.get_frontal_face_detector()    
+    name = None
+    Previous_name = None
+    proba = None
+    count = 0
+    ret, frame = cap.read()
+    cv2.namedWindow("face recognition", cv2.WINDOW_NORMAL)
+    img = cv2.imread("open_screen.png")
+    img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
+    cv2.imshow("face recognition", img)     
+    cv2.waitKey(3000) 
+    while(cap.isOpened()):     
+        ret, frame = cap.read()
+        frame = cv2.flip(frame,1,dst=None)
+        face_rects, scores, idx = detector.run(frame, 0)    
+        big_size = 0
+        big_size_idex = 0
+        big_size_x1 = 0
+        big_size_y1 = 0
+        big_size_x2 = 0
+        big_size_y2 = 0
+        face = False
+        for i, d in enumerate(face_rects):                  
+            x1 = d.left()
+            y1 = d.top()
+            x2 = d.right()
+            y2 = d.bottom()
+            height = d.bottom()-d.top()
+            width = d.right()-d.left()
+            size = height*width
+            if idx[i] == face_direction:    # 1左 0中 2右 3左歪 4又歪
+                if  x1>0 and y1>0 and x2>0 and y2>0:
+                    big_size = size
+                    big_size_idex = i
+                    big_size_x1 = d.left()
+                    big_size_y1 = d.top()
+                    big_size_x2 = d.right()
+                    big_size_y2 = d.bottom()
+                    face = True
+            if face:
+                cropped = frame[int(big_size_y1):int(big_size_y2),int(big_size_x1):int(big_size_x2)] #裁剪偵測到的人臉     
+                cv2.imwrite("temporarily.jpg", cropped)
+                from keras.preprocessing import image
+                test_image = np.expand_dims(image.img_to_array(image.load_img("temporarily.jpg", target_size= (target_size,target_size))), 0)/255
+                predict = model.predict(test_image)[0]
+                predict_proba = model.predict_proba(test_image)[0]
+                predict_class = model.predict_classes(test_image)[0]
+                proba = model.predict(test_image)[0][model.predict_classes(test_image)[0]]
+                name = name_dict['sample'+str(model.predict_classes(test_image)[0])]
+                tem = Image.open("temporarily.jpg").histogram()
+                diff = math.sqrt(reduce(operator.add, list(map(lambda a,b: (a-b)**2, tem, locals()['sample%s'%model.predict_classes(test_image)[0]])))/len(tem))
+                if proba>pro_threshold and diff<rms_threshold:         
+                    Previous_name = name 
+                    text0 = name
+                    text1 = 'probability:{:.5f}%'.format(proba)
+                    text2 = 'RMS:{:.5f}'.format(diff)
+                    if box:
+                        cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), true_rectangle_BGR, 4, cv2.LINE_AA) 
+                        cv2.putText(frame, text1, (big_size_x1, big_size_y1-30), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)  #標示姓名
+                        cv2.putText(frame, text2, (big_size_x1, big_size_y1-10), cv2.FONT_HERSHEY_DUPLEX, 0.7, true_putText_BGR, 1, cv2.LINE_AA)
+
+                        imgPil = Image.fromarray(frame)
+                        draw = ImageDraw.Draw(imgPil)
+                        draw.text((big_size_x1, big_size_y1-70),  text0, font = font, fill = true_putText_BGR)
+                        frame = np.array(imgPil)
+                else:
+                    Previous_name = None
+                    text = 'Unlabeled'
+                    text0 = name
+                    text1 = 'probability:{:.5f}%'.format(proba)
+                    text2 = 'RMS:{:.5f}'.format(diff)
+                    if box:
+                        if other_show:
+                            cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), false_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                            cv2.putText(frame, text1, (big_size_x1, big_size_y1-30), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+                            cv2.putText(frame, text2, (big_size_x1, big_size_y1-10), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)
+
+                            imgPil = Image.fromarray(frame)
+                            draw = ImageDraw.Draw(imgPil)
+                            draw.text((big_size_x1, big_size_y1-70),  text0, font = font, fill = false_putText_BGR)
+                            frame = np.array(imgPil)
+                        else:
+                            cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), false_rectangle_BGR, 4, cv2.LINE_AA) #以方框標示偵測的人臉，cv2.LINE_AA為反鋸齒效果
+                            cv2.putText(frame, text, (big_size_x1, big_size_y1), cv2.FONT_HERSHEY_DUPLEX, 0.7, false_putText_BGR, 1, cv2.LINE_AA)  #標示姓名
+            else:
+                Previous_name = None
+        if show_localtime:
+            text_time = time.strftime("%Y-%m-%d %H:%M:%S %A", time.localtime())
+            cv2.putText(frame, text_time, (20, 460), cv2.FONT_HERSHEY_DUPLEX, 0.5, show_localtime_BGR, 1, cv2.LINE_AA)
+        cv2.imshow("face recognition", frame)                  #顯示結果
+        if cv2.waitKey(1) & 0xFF == ord('q'):                #按Q停止
+            break
+        count += 1
+    cap.release()                                            #釋放資源
+    cv2.destroyAllWindows()                                  #刪除任何我們建立的窗口    
+    
 def cnn_predict(model=None, img=None, target_size=224):   
     from keras.preprocessing import image
     test_image = np.expand_dims(image.img_to_array(image.load_img(img, target_size= (target_size,target_size))), 0)/255
