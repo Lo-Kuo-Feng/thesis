@@ -19,7 +19,7 @@ from keras.models import load_model
 from PIL import ImageFont, ImageDraw, Image
 font = ImageFont.truetype(r"C:\Windows\Fonts\kaiu.ttf", 25)  # C:\Windows\Fonts
 
-__version__ = "1.9.6"
+__version__ = "1.9.7"
 
 def version():
     import sys
@@ -1031,8 +1031,11 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
             with open("attendance_sheet.txt", 'a') as at:
                 at.write(datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}'.format(name)+'\n')
             
-            cv2.imwrite(os.path.join(os.getcwd(),attendance_sheet,datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>16s}.jpg'.format(name)), cropped)
-            #
+            cv2.imwrite(os.path.join(os.getcwd(),attendance_sheet,datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'sample'+str(model.predict_classes(test_image)[0])+'.jpg'), cropped)
+            
+            src = os.path.join(os.getcwd(),attendance_sheet,datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'sample'+str(model.predict_classes(test_image)[0])+'.jpg')
+            dst = os.path.join(os.getcwd(),attendance_sheet,datetime.now().strftime('%Y-%m-%d %H.%M.%S')+'{0:>4s}.jpg'.format(name_dict['sample'+str(model.predict_classes(test_image)[0])]))
+            os.rename(src, dst)
             img = cv2.imread(os.path.join(os.getcwd(),'confirmation_screen','sample'+str(predict_class)+'_face.jpg'))
             img = cv2.resize(img,frame.shape[:2][::-1],interpolation=cv2.INTER_CUBIC) #將人臉圖片大小調整為(64, 64)
             cv2.imshow("face recognition", img)     #顯示結果
