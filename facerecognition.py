@@ -19,7 +19,7 @@ from keras.models import load_model
 from PIL import ImageFont, ImageDraw, Image
 font = ImageFont.truetype(r"C:\Windows\Fonts\kaiu.ttf", 25)  # C:\Windows\Fonts
 
-__version__ = "1.9.7"
+__version__ = "1.9.8"
 
 def version():
     import sys
@@ -846,7 +846,7 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
                     times = 0
                 Previous_name = name 
                 text0 = name
-                text1 = 'probability:{}%'.format(proba)
+                text1 = 'probability:{}'.format(proba)
                 text2 = 'RMS:{}'.format(rms)
                 if box:
                     cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), true_rectangle_BGR, 4, cv2.LINE_AA) 
@@ -863,7 +863,7 @@ def face_recognition_system_0(model=None, pro_threshold=0.9, rms_threshold = 100
                 Previous_name = None
                 text = 'Unlabeled'
                 cnn_name = name_dict['sample'+str(cnn_predict_classes)]
-                proba_text = 'probability:{}%'.format(proba)
+                proba_text = 'probability:{}'.format(proba)
                 histogram_name = name_dict['sample'+str(histogram_predict_classes)]
                 rms_text = 'RMS:{}'.format(rms)
                 if box:
@@ -992,7 +992,7 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
                     times = 0
                 Previous_name = name 
                 text0 = name
-                text1 = 'probability:{:.5f}%'.format(proba)
+                text1 = 'probability:{:.5f}'.format(proba)
                 text2 = 'RMS:{:.5f}'.format(diff)
                 if box:
                     cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), true_rectangle_BGR, 4, cv2.LINE_AA) 
@@ -1008,7 +1008,7 @@ def face_recognition_system_1(model=None, pro_threshold=0.9, rms_threshold = 100
                 Previous_name = None
                 text = 'Unlabeled'
                 text0 = name
-                text1 = 'probability:{:.5f}%'.format(proba)
+                text1 = 'probability:{:.5f}'.format(proba)
                 text2 = 'RMS:{:.5f}'.format(diff)
                 if box:
                     if other_show:
@@ -1131,7 +1131,7 @@ def face_recognition_system_1_demo(model=None, pro_threshold=0.9, rms_threshold 
                 if proba>pro_threshold and diff<rms_threshold:         
                     Previous_name = name 
                     text0 = name
-                    text1 = 'probability:{:.5f}%'.format(proba)
+                    text1 = 'probability:{:.5f}'.format(proba)
                     text2 = 'RMS:{:.5f}'.format(diff)
                     if box:
                         cv2.rectangle(frame, (big_size_x1, big_size_y1), (big_size_x2, big_size_y2), true_rectangle_BGR, 4, cv2.LINE_AA) 
@@ -1146,7 +1146,7 @@ def face_recognition_system_1_demo(model=None, pro_threshold=0.9, rms_threshold 
                     Previous_name = None
                     text = 'Unlabeled'
                     text0 = name
-                    text1 = 'probability:{:.5f}%'.format(proba)
+                    text1 = 'probability:{:.5f}'.format(proba)
                     text2 = 'RMS:{:.5f}'.format(diff)
                     if box:
                         if other_show:
